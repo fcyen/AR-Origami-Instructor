@@ -16,7 +16,7 @@ def startWebcam(opt):
     while True:
         success, img = cap.read()
         imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        cv2.imshow("Webcam", img)
+        mask = cv2.inRange(imgHSV, lowerHSV, upperHSV)
 
         # ==== key controls ====
         keyPressed = cv2.waitKey(1)
@@ -37,12 +37,23 @@ def startWebcam(opt):
         # =======================
         
         if trackbarOn:
-            mask = cv2.inRange(imgHSV, lowerHSV, upperHSV)
             cv2.imshow("Mask", mask)
             #trackbar.useHSVTrackbars(img)
 
         # === shape detection ===
-        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # remove noise 
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.erode(mask, kernel)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > 400:
+                approx = cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)
+                cv2.drawContours(img, [approx], 0, (255,0,0), 2)
+
+        cv2.imshow("Webcam", img)
 
 
 class TrackbarChange():
