@@ -5,15 +5,14 @@ from trackbar import Trackbars
 from trackbar2 import Trackbar
 import shapeDetection as shape
 
+HSV = 0
+CANNY = 1
+
 """
 Press 'q' to quit
       'w' to toggle HSV trackbars
+      'e' to toggle Canny threshold trackbars
 """
-
-lowerHSV = np.array([0,0,0])
-upperHSV = np.array([0,0,0])
-
-houghline = { "Houghline"}
 
 def startWebcam():
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # open the default camera
@@ -23,11 +22,15 @@ def startWebcam():
 
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
-        canny = json.load(json_file)
+        raw = json.load(json_file)
+        hsv = raw[str(HSV)]
+        lowerHSV = np.array(hsv["LowerHSV"])
+        upperHSV = np.array(hsv["UpperHSV"])
+        canny = raw[str(CANNY)]
 
-    trackbarOn = False
+    # for trackbars
+    trackbarOn = [False, False] # [HSV, CANNY]
     tb = Trackbars(lowerHSV, upperHSV)
-    cannyTbOn = False
     cannyTb = Trackbar(canny, "Canny Thresholds")
 
 
@@ -45,8 +48,10 @@ def startWebcam():
 
         # quit with saving
         elif (keyPressed & 0xFF) == ord('s'):
+            raw[str(HSV)]["LowerHSV"] = lowerHSV.tolist()
+            raw[str(HSV)]["UpperHSV"] = upperHSV.tolist()
             with open('trackbarValues.json', 'w') as json_file:
-                json.dump(canny, json_file)
+                json.dump(raw, json_file)
 
             cap.release()
             cv2.destroyAllWindows()
@@ -54,35 +59,37 @@ def startWebcam():
         # HSV trackbar
         elif (keyPressed & 0xFF) == ord('w'):
             # turn on trackbar
-            if not trackbarOn:
+            if not trackbarOn[HSV]:
                 tb.startTrackbars()
-                trackbarOn = True
+                trackbarOn[HSV] = True
             else:
                 values = tb.closeTrackbars()
-                trackbarOn = False
+                trackbarOn[HSV] = False
 
         # Canny trackbar
         elif (keyPressed & 0xFF) == ord('e'):
-            if not cannyTbOn:
+            if not trackbarOn[CANNY]:
                 cannyTb.startTrackbars()
-                cannyTbOn = True
+                trackbarOn[CANNY] = True
             else:
                 cannyTb.closeTrackbars()
-                cannyTbOn = False
+                trackbarOn[CANNY] = False
         # =======================
-        
-        if trackbarOn:
+
+        # Necessary operations when respective trackbar is on
+        if trackbarOn[HSV]:
             cv2.imshow("Mask", mask)
-            #trackbar.useHSVTrackbars(img)
-        if cannyTbOn:
+        if trackbarOn[CANNY]:
             cannyTb.getTrackbarValues()
 
-
-        #shape.detectShape(img, mask)
-        shape.detectShape2(img, canny["Threshold1"][0], canny["Threshold2"][0])
+        # Detection operations
+        img2 = np.ones((480,640,3))
+        shape.detectShape(img, mask, img2)
+        shape.detectLines(img, canny["Threshold1"][0], canny["Threshold2"][0], img2)
 
         cv2.imshow("Webcam", img)
-
+        cv2.imshow("Result", img2)
+        
 
 startWebcam()
 

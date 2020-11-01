@@ -34,14 +34,17 @@ class Trackbars:
 
 
     def startTrackbars(self):
+        l = self.lower
+        u = self.upper
+
         cv2.namedWindow(TRACKBAR_WINDOW)
         cv2.resizeWindow(TRACKBAR_WINDOW, 640, 240)
-        cv2.createTrackbar("Hue Min", TRACKBAR_WINDOW, 0, 179, self.hueMin)
-        cv2.createTrackbar("Hue Max", TRACKBAR_WINDOW, 179, 179, self.hueMax)
-        cv2.createTrackbar("Sat Min", TRACKBAR_WINDOW, 0, 255, self.satMin)
-        cv2.createTrackbar("Sat Max", TRACKBAR_WINDOW, 255, 255, self.satMax)
-        cv2.createTrackbar("Val Min", TRACKBAR_WINDOW, 0, 255, self.valMin)
-        cv2.createTrackbar("Val Max", TRACKBAR_WINDOW, 255, 255, self.valMax)
+        cv2.createTrackbar("Hue Min", TRACKBAR_WINDOW, l[0], 179, self.hueMin)
+        cv2.createTrackbar("Hue Max", TRACKBAR_WINDOW, u[0], 179, self.hueMax)
+        cv2.createTrackbar("Sat Min", TRACKBAR_WINDOW, l[1], 255, self.satMin)
+        cv2.createTrackbar("Sat Max", TRACKBAR_WINDOW, u[1], 255, self.satMax)
+        cv2.createTrackbar("Val Min", TRACKBAR_WINDOW, l[2], 255, self.valMin)
+        cv2.createTrackbar("Val Max", TRACKBAR_WINDOW, u[2], 255, self.valMax)
 
 
     def useHSVTrackbars(self, img):
