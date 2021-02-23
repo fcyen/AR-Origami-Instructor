@@ -12,7 +12,7 @@ class Trackbars:
         reference to the lowerHSV array
     upper : np array
         reference to the upperHSV array
-    
+
     Methods
     -------
     startTrackbars 
@@ -21,7 +21,7 @@ class Trackbars:
     useHSVTrackbars
         ~ currently not in-use
         Opens a window that displays mask based on trackbar values
-    
+
     closeTrackbars  
         Closes trackbars and return lower & upper values in separate arrays
         - return values might not be necessary because you can get the same values in the lowerHSV & upperHSV arrays
@@ -31,7 +31,6 @@ class Trackbars:
     def __init__(self, lower, upper):
         self.lower = lower
         self.upper = upper
-
 
     def startTrackbars(self):
         l = self.lower
@@ -45,7 +44,6 @@ class Trackbars:
         cv2.createTrackbar("Sat Max", TRACKBAR_WINDOW, u[1], 255, self.satMax)
         cv2.createTrackbar("Val Min", TRACKBAR_WINDOW, l[2], 255, self.valMin)
         cv2.createTrackbar("Val Max", TRACKBAR_WINDOW, u[2], 255, self.valMax)
-
 
     def useHSVTrackbars(self, img):
         imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -62,7 +60,6 @@ class Trackbars:
         mask = cv2.inRange(imgHSV, lower, upper)
 
         cv2.imshow("Mask", mask)
-
 
     def closeTrackbars(self):
         h_min = cv2.getTrackbarPos("Hue Min", TRACKBAR_WINDOW)
@@ -83,18 +80,18 @@ class Trackbars:
     # onChange callbacks
     def hueMin(self, x):
         self.lower[0] = x
-    
+
     def hueMax(self, x):
         self.upper[0] = x
 
     def satMin(self, x):
         self.lower[1] = x
-    
+
     def satMax(self, x):
         self.upper[1] = x
 
     def valMin(self, x):
         self.lower[2] = x
-    
+
     def valMax(self, x):
         self.upper[2] = x

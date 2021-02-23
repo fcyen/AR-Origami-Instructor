@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class Trackbar:
     """
     Attributes
@@ -9,7 +10,7 @@ class Trackbar:
         { trackbarName: [curPos, maxPos] }
     windowName : string
         name of the window
-    
+
     Methods
     -------
     startTrackbars 
@@ -17,7 +18,7 @@ class Trackbar:
 
     getTrackbarValues
         Updates the trackbars object with the current positions
-    
+
     closeTrackbars  
         Closes trackbars
     """
@@ -26,10 +27,8 @@ class Trackbar:
         self.windowName = windowName
         self.trackbars = trackbars
 
-
     def onChange(self, x):
         pass
-    
 
     def startTrackbars(self):
         wName = self.windowName
@@ -41,7 +40,6 @@ class Trackbar:
             initPos = trackbars[tb][0]
             maxPos = trackbars[tb][1]
             cv2.createTrackbar(tb, wName, initPos, maxPos, self.onChange)
-    
 
     def getTrackbarValues(self):
         allValues = []
@@ -50,7 +48,5 @@ class Trackbar:
             curPos = cv2.getTrackbarPos(tb, self.windowName)
             self.trackbars[tb][0] = curPos
 
-
     def closeTrackbars(self):
         cv2.destroyWindow(self.windowName)
-
