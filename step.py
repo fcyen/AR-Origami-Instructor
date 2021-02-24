@@ -6,16 +6,25 @@ import numpy as np
 import json
 import time
 import cv2
+from sys import platform
 
 
 state = 0
 num = 0
 steps = allSteps.steps
+DEBUG = allSteps.DEBUG
 
 
 def main(debug=False):
-    cap = cv2.VideoCapture(0, 1200)  # open the default camera
+    if platform == "win32":
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(0, 1200)  # open the default camera
     # cap = cv2.VideoCapture('full_sample.mov')  # use sample video
+
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -7)  # set exposure to minimum
 
     state = 0
     num = 0
@@ -27,11 +36,15 @@ def main(debug=False):
         hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
+        hsv_skin = raw[str(2)]
+        lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
+        upperHSV_skin = np.array(hsv_skin["UpperHSV"])
 
     while True:
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
+        img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
 
         if state == 0:
             if num == 0:
@@ -44,7 +57,8 @@ def main(debug=False):
                 state = 1
 
         elif state == 1:
-            if step.showNextStep(img, img_masked):
+            hand_detected = img_skin.sum() > 10000000
+            if step.showNextStep(img, img_masked) or hand_detected:
                 state = 0
                 if num == len(steps):
                     print("Well done!")
@@ -57,9 +71,6 @@ def main(debug=False):
 
         print("State: {}, step {}".format(state, step.id))
 
-        # retval = cv2.videoio_registry.getCameraBackends()
-        # print(retval, cap)  # getBackendName(cap))
-        # v = cap.getBackendName(1800)
         cv2.imshow('Webcam', img)
 
         keyPressed = cv2.waitKey(1)
@@ -69,4 +80,4 @@ def main(debug=False):
             break
 
 
-main(debug=True)
+main(debug=DEBUG)

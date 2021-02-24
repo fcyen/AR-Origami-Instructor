@@ -1,10 +1,18 @@
 import cv2
 import styles
-from shapeDetection import findSquare, findTriangle, calculatedSquaredDistance
+from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance
 from shapeComparison import rotate
 import draw
 
 steps = []  # array of Step instances
+DEBUG = True
+
+# # retrieve saved values
+# with open('trackbarValues.json') as json_file:
+#     raw = json.load(json_file)
+#     hsv_y = raw[str(2)]
+#     lowerHSV_yellow = np.array(hsv_y["LowerHSV"])
+#     upperHSV_yellow = np.array(hsv_y["UpperHSV"])
 
 
 class Step:
@@ -88,14 +96,13 @@ class Step:
         if True:
             print('d = ' + str(d))
         # see excel file for experiment results
-        if d < 0.6 and d >= 0:
+        if d < 0.8 and d >= 0:
             return True
         else:
             return False
 
     def checkShape(self, img_masked, img, debug=False):
         if "checkShapeOverride" in self.kwargs:
-            # specifically for the first step, findSquare function is used
             if debug:
                 shape = self.kwargs['checkShapeOverride'](img_masked, img)
             else:
@@ -162,7 +169,7 @@ class Step:
 
     def showNextStep(self, dimg, bimg):
         ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
-        if self.match_count < 50:
+        if self.match_count < 500:
             if "checkShapeOverride" in self.kwargs:
                 # specifically for the first step, findSquare function is used
                 cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
@@ -184,8 +191,8 @@ class Step:
                 # if contour no longer matches, either
                 # - break if instruction has been shown for sufficient duration
                 # - reset count to zero so that instruction will be shown when contour matches again
-                if self.other_count > 15:
-                    if self.match_count > 10:
+                if self.other_count > 50:
+                    if self.match_count > 50:
                         return True
                     else:
                         self.match_count = 0
@@ -216,7 +223,6 @@ instruction1 = "Fold paper in half"
 step1 = Step(1, 'assets/step2.png', draw1, instruction1,
              False, checkShapeOverride=findSquare)
 step1.vertices_count = 4  # override vertices count
-steps.append(step1)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 2a ~~~~~~~~~~~~~~~~~~~
@@ -263,39 +269,30 @@ def draw2a(img, ref_cnt, bounding_rect):
 instruction2a = "Fold the top layer along the dotted line, aligning the edges."
 step2a = Step(2, 'assets/step2.png', draw2a, instruction2a,
               False, checkShapeOverride=findTriangle)
-steps.append(step2a)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
+# ref_cnt: (top, base1, base2) where base2 is the vertex next to the concave vertex
 def draw3a(img, ref_cnt, bounding_rect):
-    # find distance between each vertex
     cnt = ref_cnt.reshape(3, 2)
-    (ax, ay), (bx, by), (cx, cy) = cnt
-    ab = (ax-bx)**2 + (ay-by)**2
-    bc = (bx-cx)**2 + (by-cy)**2
-    ac = (ax-cx)**2 + (ay-cy)**2
+    top, base1, base2 = cnt
 
-    long_edge = max(ab, bc, ac)
-    if ab == long_edge:
-        # mid = ((ax+bx)/2, (ay+by)/2)
-        base1 = (ax, ay)
-        base2 = (bx, by)
-        top = (cx, cy)
-    elif bc == long_edge:
-        # mid = ((cx+bx)/2, (cy+by)/2)
-        base1 = (bx, by)
-        base2 = (cx, cy)
-        top = (ax, ay)
-    else:  # ac
-        # mid = ((cx+ax)/2, (cy+ay)/2)
-        base1 = (ax, ay)
-        base2 = (cx, cy)
-        top = (bx, by)
+    if DEBUG:
+        t = tuple(top)
+        b1 = tuple(base1)
+        b2 = tuple(base2)
+        cv2.circle(img, t, 3, (0,255,255), -1)
+        cv2.putText(img, 'top', t, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
+        cv2.circle(img, b1, 3, (0,255,255), -1)
+        cv2.putText(img, 'base1', b1, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
+        cv2.circle(img, b2, 3, (0,255,255), -1)
+        cv2.putText(img, 'base2', b2, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
 
     # -- draw line
-    r = 0.2
-    line_start = (r*base1[0] + (1-r)*top[0], r*base1[1] + (1-r)*top[1])
-    line_end = (r*base1[0] + (1-r)*base2[0], r*base1[1] + (1-r)*base2[1])
+    r1 = 0.2
+    r2 = 0.3
+    line_start = (r1*base1[0] + (1-r1)*top[0], r1*base1[1] + (1-r1)*top[1])
+    line_end = (r2*base1[0] + (1-r2)*base2[0], r2*base1[1] + (1-r2)*base2[1])
     line_start = convertToIntPoint(line_start)
     line_end = convertToIntPoint(line_end)
     cv2.line(img, line_start, line_end, (255, 0, 0), 3)
@@ -318,8 +315,7 @@ def draw3a(img, ref_cnt, bounding_rect):
 
 instruction3a = "Fold all layers along the dotted line."
 step3a = Step(3, 'assets/step2.png', draw3a, instruction3a,
-              False, checkShapeOverride=findTriangle)
-steps.append(step3a)
+              False, checkShapeOverride=findTriangleWithFold)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 4 ~~~~~~~~~~~~~~~~~~~
@@ -329,6 +325,11 @@ def draw4(img, ref_cnt, bounding_rect):
 
 instruction4 = "Origami completed! Well done!!"
 step4 = Step(4, 'assets/new_step4.png', draw4, instruction4, False)
+
+
+# steps.append(step1)
+# steps.append(step2a)
+steps.append(step3a)
 steps.append(step4)
 
 

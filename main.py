@@ -7,10 +7,13 @@ import shapeDetection as shape
 import styles
 import draw
 import time
-# from step import Step
+from sys import platform
+from shapeDetection import detectShape, findTriangleWithFold
 
 HSV = 0
 CANNY = 1
+HSV_YELLOW = 2
+HSV_WHITE = 3
 TEXT_POS = (100, 100)
 
 """
@@ -21,15 +24,19 @@ Press 'q' to quit
 
 
 def startWebcam():
-    cap = cv2.VideoCapture(0)  # open the default camera
-    a = cap.get(cv2.CAP_PROP_FPS)
+    if platform == 'win32':
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(0)  # open the default camera
+
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -7)  # set exposure to minimum
 
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
         raw = json.load(json_file)
-        hsv = raw[str(HSV)]
+        hsv = raw[str(HSV_YELLOW)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
         canny = raw[str(CANNY)]
@@ -63,8 +70,48 @@ def startWebcam():
             cap.release()
             cv2.destroyAllWindows()
 
+        # quit with saving (yellow)
+        elif (keyPressed & 0xFF) == ord('t'):
+            raw[str(HSV_YELLOW)]["LowerHSV"] = lowerHSV.tolist()
+            raw[str(HSV_YELLOW)]["UpperHSV"] = upperHSV.tolist()
+            with open('trackbarValues.json', 'w') as json_file:
+                json.dump(raw, json_file)
+
+            cap.release()
+            cv2.destroyAllWindows()
+
+        # quit with saving (yellow)
+        elif (keyPressed & 0xFF) == ord('u'):
+            raw[str(HSV_WHITE)]["LowerHSV"] = lowerHSV.tolist()
+            raw[str(HSV_WHITE)]["UpperHSV"] = upperHSV.tolist()
+            with open('trackbarValues.json', 'w') as json_file:
+                json.dump(raw, json_file)
+
+            cap.release()
+            cv2.destroyAllWindows()
+
         # HSV trackbar
+        elif (keyPressed & 0xFF) == ord('x'):
+            # turn on trackbar
+            if not trackbarOn[HSV]:
+                tb.startTrackbars()
+                trackbarOn[HSV] = True
+            else:
+                values = tb.closeTrackbars()
+                trackbarOn[HSV] = False
+
+        # HSV trackbar (white)
         elif (keyPressed & 0xFF) == ord('w'):
+            # turn on trackbar
+            if not trackbarOn[HSV]:
+                tb.startTrackbars()
+                trackbarOn[HSV] = True
+            else:
+                values = tb.closeTrackbars()
+                trackbarOn[HSV] = False
+
+        # HSV trackbar (yellow)
+        elif (keyPressed & 0xFF) == ord('y'):
             # turn on trackbar
             if not trackbarOn[HSV]:
                 tb.startTrackbars()
@@ -115,6 +162,10 @@ def startWebcam():
             print('2')
             time.sleep(5)
             break
+
+        elif state == 2: 
+            print(mask.sum())
+
 
         cv2.namedWindow('Result')
         cv2.imshow("Result", img_copy)

@@ -1,1 +1,1 @@
-{"0": {"LowerHSV": [0, 0, 45], "UpperHSV": [179, 44, 255]}, "1": {"Threshold1": [40, 255], "Threshold2": [183, 255]}}
+{"0": {"LowerHSV": [0, 0, 38], "UpperHSV": [145, 143, 255]}, "1": {"Threshold1": [40, 255], "Threshold2": [183, 255]}, "2": {"LowerHSV": [0, 0, 64], "UpperHSV": [50, 204, 255]}, "3": {"LowerHSV": [45, 0, 143], "UpperHSV": [154, 56, 255]}}
