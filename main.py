@@ -1,178 +1,78 @@
 import cv2
-import numpy as np
 import json
-from trackbar import Trackbars
-from trackbar2 import Trackbar
-import shapeDetection as shape
-import styles
-import draw
-import time
+import matplotlib.pyplot as plt
+import numpy as np
 from sys import platform
-from shapeDetection import detectShape, findTriangleWithFold
+import time
 
-HSV = 0
-CANNY = 1
-HSV_YELLOW = 2
-HSV_WHITE = 3
-TEXT_POS = (100, 100)
-
-"""
-Press 'q' to quit
-      'w' to toggle HSV trackbars
-      'e' to toggle Canny threshold trackbars
-"""
+from allSteps import steps, DEBUG
+import draw
 
 
-def startWebcam():
-    if platform == 'win32':
+def main():
+    if platform == "win32":
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
-        cap = cv2.VideoCapture(0)  # open the default camera
+        cap = cv2.VideoCapture(0, 1200)
+    # cap = cv2.VideoCapture('videos/full_sample.mov')  # use sample video
 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_EXPOSURE, -7)  # set exposure to minimum
 
+    state = 0
+    num = 0
+    step = steps[num]
+
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
         raw = json.load(json_file)
-        hsv = raw[str(HSV_YELLOW)]
+        hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        canny = raw[str(CANNY)]
+        hsv_skin = raw[str(2)]
+        lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
+        upperHSV_skin = np.array(hsv_skin["UpperHSV"])
 
-    # for trackbars
-    trackbarOn = [False, False]  # [HSV, CANNY]
-    tb = Trackbars(lowerHSV, upperHSV)
-    cannyTb = Trackbar(canny, "Canny Thresholds")
-
-    state = 2
+    # -------------------- main loop ------------------------
 
     while True:
         success, img = cap.read()
-        imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(imgHSV, lowerHSV, upperHSV)
+        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
+        img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
 
-        # ==== key controls ====
+        if state == 0:
+            if num == 0:
+                text = 'Place paper on the table with the white colour side facing up.'
+                draw.putInstruction(img, text)
+
+            if step.checkShape(img_masked, img):
+                num += 1
+                state = 1
+
+        elif state == 1:
+            hand_detected = img_skin.sum() > 10000000
+            if step.showNextStep(img, img_masked) or hand_detected:
+                state = 0
+                if num == len(steps):
+                    print("Well done!")
+                    time.sleep(5)
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    break
+                else:
+                    step = steps[num]
+
+        print("State: {}, step {}".format(state, step.id))
+
+        cv2.imshow('Webcam', img)
+
         keyPressed = cv2.waitKey(1)
-        # quit
         if (keyPressed & 0xFF) == ord('q'):
             cap.release()
             cv2.destroyAllWindows()
-
-        # quit with saving
-        elif (keyPressed & 0xFF) == ord('s'):
-            raw[str(HSV)]["LowerHSV"] = lowerHSV.tolist()
-            raw[str(HSV)]["UpperHSV"] = upperHSV.tolist()
-            with open('trackbarValues.json', 'w') as json_file:
-                json.dump(raw, json_file)
-
-            cap.release()
-            cv2.destroyAllWindows()
-
-        # quit with saving (yellow)
-        elif (keyPressed & 0xFF) == ord('t'):
-            raw[str(HSV_YELLOW)]["LowerHSV"] = lowerHSV.tolist()
-            raw[str(HSV_YELLOW)]["UpperHSV"] = upperHSV.tolist()
-            with open('trackbarValues.json', 'w') as json_file:
-                json.dump(raw, json_file)
-
-            cap.release()
-            cv2.destroyAllWindows()
-
-        # quit with saving (yellow)
-        elif (keyPressed & 0xFF) == ord('u'):
-            raw[str(HSV_WHITE)]["LowerHSV"] = lowerHSV.tolist()
-            raw[str(HSV_WHITE)]["UpperHSV"] = upperHSV.tolist()
-            with open('trackbarValues.json', 'w') as json_file:
-                json.dump(raw, json_file)
-
-            cap.release()
-            cv2.destroyAllWindows()
-
-        # HSV trackbar
-        elif (keyPressed & 0xFF) == ord('x'):
-            # turn on trackbar
-            if not trackbarOn[HSV]:
-                tb.startTrackbars()
-                trackbarOn[HSV] = True
-            else:
-                values = tb.closeTrackbars()
-                trackbarOn[HSV] = False
-
-        # HSV trackbar (white)
-        elif (keyPressed & 0xFF) == ord('w'):
-            # turn on trackbar
-            if not trackbarOn[HSV]:
-                tb.startTrackbars()
-                trackbarOn[HSV] = True
-            else:
-                values = tb.closeTrackbars()
-                trackbarOn[HSV] = False
-
-        # HSV trackbar (yellow)
-        elif (keyPressed & 0xFF) == ord('y'):
-            # turn on trackbar
-            if not trackbarOn[HSV]:
-                tb.startTrackbars()
-                trackbarOn[HSV] = True
-            else:
-                values = tb.closeTrackbars()
-                trackbarOn[HSV] = False
-
-        # Canny trackbar
-        elif (keyPressed & 0xFF) == ord('e'):
-            if not trackbarOn[CANNY]:
-                cannyTb.startTrackbars()
-                trackbarOn[CANNY] = True
-            else:
-                cannyTb.closeTrackbars()
-                trackbarOn[CANNY] = False
-        # =======================
-
-        # Necessary operations when respective trackbar is on
-        if trackbarOn[HSV]:
-            cv2.namedWindow('Mask')
-            cv2.imshow("Mask", mask)
-        if trackbarOn[CANNY]:
-            cannyTb.getTrackbarValues()
-
-
-# **************************************************************
-
-        img_copy = np.copy(img)
-
-        if state == 0:  # Step 1
-            sq1 = []
-            try:
-                sq1, sq2, sq3, sq4 = shape.findSquare(mask, img_copy)
-                if len(sq1) > 0:  # if square is found
-                    cv2.line(img_copy, tuple(sq1), tuple(sq3), styles.GREEN, 2)
-                    draw.drawCurvedArrow(
-                        img_copy, sq2, sq3, sq4, sq1, styles.GREEN)
-                    instruction1 = "Fold the paper in half along the green line"
-                    cv2.putText(img_copy, instruction1, TEXT_POS,
-                                cv2.FONT_HERSHEY_PLAIN, 1)
-                    time.sleep(2)
-                    state += 1
-            except:
-                pass
-        # check Step 1 completion
-        elif state == 1:
-            print('2')
-            time.sleep(5)
             break
 
-        elif state == 2: 
-            print(mask.sum())
 
-
-        cv2.namedWindow('Result')
-        cv2.imshow("Result", img_copy)
-
-
-state = 0
-startWebcam()
-
-
-#shape.detectLines(img, canny["Threshold1"][0], canny["Threshold2"][0], img2)
+main()

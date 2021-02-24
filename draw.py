@@ -1,26 +1,30 @@
-# let's learn how to draw with OpenCV
 import cv2
 import math
 import numpy as np
+
 import shapeComparison
+
 
 # set up a basic canvas here
 img = np.zeros(shape=(512, 512, 3), dtype=np.int8)
 
 # ------ constants -------
 RED = (0, 0, 255)
-GREEN = (0, 255, 0)
-BLUE = (255, 0, 0)
-THICKNESS = 2
+DEBUG_GREEN = (130, 229, 122)
+BLUE = (238, 97, 67)
+LIGHTBLUE = (240, 201, 76)
+THICKNESS_S = 2
+THICKNESS_M = 3
+
 pt_a = (100, 100)
 pt_b = (100, 412)
 pt_c = (412, 412)
 pt_d = (412, 100)
 
+
 # ====== drawing functions below ======
 
-
-def drawCurvedArrow(dimg, p1, p2, p3, p4, color=BLUE, thickness=2):
+def drawCurvedArrow(dimg, p1, p2, p3, p4, color=LIGHTBLUE, thickness=THICKNESS_S):
     # move points inwards by 20%
     p1x = round(0.8*p1[0] + 0.2*p3[0])
     p1y = round(0.8*p1[1] + 0.2*p3[1])
@@ -50,7 +54,7 @@ def drawCurvedArrow(dimg, p1, p2, p3, p4, color=BLUE, thickness=2):
     drawTriangle(dimg, curve_points[-1], curve_points[-5], color, thickness)
 
 
-def drawTriangle(dimg, v1, vm, color=BLUE, thickness=THICKNESS):
+def drawTriangle(dimg, v1, vm, color=LIGHTBLUE, thickness=THICKNESS_M):
     # find coordinates
     x1, y1 = v1
     xm, ym = vm
@@ -71,9 +75,12 @@ def drawTriangle(dimg, v1, vm, color=BLUE, thickness=THICKNESS):
     cv2.polylines(dimg, [pts], isClosed=True, color=color, thickness=thickness)
     cv2.fillPoly(dimg, [pts], color=color)
 
+
+def putInstruction(dimg, text, scale=1, colour=BLUE, thickness=2, position=(100,100), font=cv2.FONT_HERSHEY_DUPLEX):
+    cv2.putText(dimg, text, position, font, scale, colour, thickness)
+
+
 # ====== other math functions ======
-
-
 def equationroots(a, b, c):
     dis = b * b - 4 * a * c
     sqrt_val = math.sqrt(abs(dis))
@@ -90,7 +97,7 @@ def equationroots(a, b, c):
     else:  # complex roots
         return [-1, -1]
 
-# ======================================
+# ==================================
 
 # -- Finding 4th vertex of a square --
 # cx = int((pt_a[0]+pt_c[0])/2)

@@ -1,8 +1,7 @@
 import cv2
-import styles
-from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance
-from shapeComparison import rotate
+
 import draw
+from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance
 
 steps = []  # array of Step instances
 DEBUG = True
@@ -16,7 +15,7 @@ DEBUG = True
 
 
 class Step:
-    def __init__(self, id, path, draw_fn, instruction, is_last_step=False, **kwargs):
+    def __init__(self, id, path, draw_fn, instruction, vertices_count=3, **kwargs):
         '''
         Parameters:
             path: str - path to reference image
@@ -24,7 +23,6 @@ class Step:
             instruction: str - instruction to be displayed
         '''
         self.id = id
-        self.is_last_step = is_last_step
         self.match_count = 0
         self.other_count = 0
         self.bouding_rect = []
@@ -33,14 +31,15 @@ class Step:
         self.kwargs = kwargs
 
         # -- get the reference image's contour --
-        ref_img = cv2.imread(path)
-        self.ref_bin = self.getBinarizedImage(ref_img)
-        self.ref_cnt = self.detectContour(self.ref_bin, ref_img)
-        self.vertices_count = len(self.ref_cnt)
-        # cv2.imshow('Step '+str(id), ref_img)
-        self.bounding_rect = cv2.minAreaRect(self.ref_cnt)
-        if len(self.ref_cnt) < 1:
-            print('No contour detected for reference image!')
+        if path != '':
+            ref_img = cv2.imread(path)
+            self.ref_bin = self.getBinarizedImage(ref_img)
+            self.ref_cnt = self.detectContour(self.ref_bin, ref_img)
+            self.vertices_count = len(self.ref_cnt)
+            # cv2.imshow('Step '+str(id), ref_img)
+            self.bounding_rect = cv2.minAreaRect(self.ref_cnt)
+            if len(self.ref_cnt) < 1:
+                print('No contour detected for reference image!')
 
     def detectContour(self, img, disp_img=[]):
         '''
@@ -58,11 +57,13 @@ class Step:
         for i in range(len(contours)):
             cnt = contours[i]
             area = cv2.contourArea(cnt)
+
             if area > 20000:
                 peri = cv2.arcLength(cnt, True)
                 approx = cv2.approxPolyDP(cnt, 0.01*peri, True)
+
                 # draw contour
-                if len(disp_img) > 0:
+                if len(disp_img) > 0 and DEBUG:
                     cv2.drawContours(
                         disp_img, [approx], 0, (0, 0, 255), 2, offset=(0, 0))
                     cv2.putText(disp_img, str(
@@ -78,10 +79,10 @@ class Step:
             return result
 
     def getBinarizedImage(self, img):
-        ''' Binarized image using a threshold of 180 '''
+        ''' Binarized image using a threshold of 190 '''
         if len(img.shape) == 3:
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            img_blur = cv2.GaussianBlur(img_gray, (3, 3), 1)
+            img_blur = cv2.GaussianBlur(img_gray, (5, 5), 1)
             ret, img_bin = cv2.threshold(img_blur, 190, 255, cv2.THRESH_BINARY)
             return img_bin
         else:
@@ -93,17 +94,17 @@ class Step:
         if len(cnt1) > 0 and len(cnt2) > 0:
             d = cv2.matchShapes(cnt1, cnt2, cv2.CONTOURS_MATCH_I2, 0)
 
-        if True:
+        if DEBUG:
             print('d = ' + str(d))
         # see excel file for experiment results
-        if d < 0.8 and d >= 0:
+        if d < 0.9 and d >= 0:
             return True
         else:
             return False
 
-    def checkShape(self, img_masked, img, debug=False):
+    def checkShape(self, img_masked, img):
         if "checkShapeOverride" in self.kwargs:
-            if debug:
+            if DEBUG:
                 shape = self.kwargs['checkShapeOverride'](img_masked, img)
             else:
                 shape = self.kwargs['checkShapeOverride'](img_masked)
@@ -114,22 +115,15 @@ class Step:
                 shape_match = False
 
         else:
-            if debug:
+            if DEBUG:
                 cnt_feed = self.detectContour(img_masked, img)
             else:
                 cnt_feed = self.detectContour(img_masked)
 
-            # if len(cnt_feed) > 0:
-            #     print('--')
-            #     # cv2.drawContours(img_masked, [cnt_feed], 0, (0, 0, 255), 2)
             shape_match = self.compareShapes(self.ref_cnt, cnt_feed)
 
-        # TODO: change back to 10
+        # return True after 10 consecutive matches
         if shape_match and self.match_count > 10:
-            # get bounding rectangle
-            # self.bounding_rect = cv2.minAreaRect(cnt_feed)
-            # box = cv2.boxPoints(bounding_rect)
-            # bounding_box = np.int0(box)
             self.match_count = 0
             self.other_count = 0
             return True
@@ -140,59 +134,33 @@ class Step:
             self.match_count = 0
             return False
 
-    def perspectiveWarp(self, img, rect):
-        # width = int(rect[1][0])
-        # height = int(rect[1][1])
-        # box = cv2.boxPoints(rect)
-        # box = np.int0(box)
-        # src_pts = box.astype("float32")
-        # dst_pts = np.array([[0, height-1],
-        #                     [0, 0],
-        #                     [width-1, 0],
-        #                     [width-1, height-1]], dtype="float32")
-        # matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
-        # warped = cv2.warpPerspective(img, matrix, (width, height))
-        # return warped
-        pass
-
-    def alignContours(self, bimg):
-        # cnt_feed = self.detectContour(bimg)
-        # rect_feed = cv2.minAreaRect(cnt_feed)
-        # warped_feed = self.perspectiveWarp(bimg, rect_feed)
-        # warped_ref = self.perspectiveWarp(self.ref_bin, self.bounding_rect)
-        # new_h, new_w = warped_feed.shape
-        # resized_warped_ref = cv2.resize(warped_ref, (new_w, new_h))
-        # plt.subplot(121), plt.imshow(warped_feed)
-        # plt.subplot(122), plt.imshow(resized_warped_ref)
-        # plt.show()
-        pass
 
     def showNextStep(self, dimg, bimg):
         ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
         if self.match_count < 500:
             if "checkShapeOverride" in self.kwargs:
-                # specifically for the first step, findSquare function is used
                 cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
             else:
                 cnt_feed = self.detectContour(bimg)
 
             # make sure the number of vertices is correct
             if len(cnt_feed) == self.vertices_count:
-                cv2.drawContours(dimg, [cnt_feed], 0, styles.GREEN, 3)
+                cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
                 self.draw(dimg, cnt_feed, [])
                 self.match_count += 1
-                cv2.putText(dimg, self.instruction, (100, 100),
-                            cv2.FONT_HERSHEY_PLAIN, 3, styles.GREEN)
+                draw.putInstruction(dimg, self.instruction)
+
             else:
-                print('Wrong number of vertices! Expected {} got {}'.format(
-                    self.vertices_count, len(cnt_feed)))
+                if DEBUG:
+                    print('Wrong number of vertices! Expected {} got {}'.format(
+                        self.vertices_count, len(cnt_feed)))
                 self.other_count += 1
 
                 # if contour no longer matches, either
                 # - break if instruction has been shown for sufficient duration
                 # - reset count to zero so that instruction will be shown when contour matches again
                 if self.other_count > 50:
-                    if self.match_count > 50:
+                    if self.match_count > 80:
                         return True
                     else:
                         self.match_count = 0
@@ -203,8 +171,20 @@ class Step:
             return True
 
 
+# =============== Utilities ================
+
 def convertToIntPoint(point):
     return (int(point[0]), int(point[1]))
+
+
+def rotate(point, center, angle):
+    angle = angle/180 * math.pi  # convert to radians
+    x1, y1 = point
+    xc, yc = center
+    x2 = ((x1 - xc) * math.cos(angle)) - ((y1 - yc) * math.sin(angle)) + xc
+    y2 = ((x1 - xc) * math.sin(angle)) + ((y1 - yc) * math.cos(angle)) + yc
+    return convertToIntPoint((x2, y2))
+# ==========================================
 
 
 # ~~~~~~~~~~~~~~~~~ Step 1 ~~~~~~~~~~~~~~~~~~~
@@ -214,15 +194,12 @@ def draw1(img, ref_cnt, bounding_rect):
     pt3 = tuple(ref_cnt[2])
     pt4 = tuple(ref_cnt[3])
     # draws a line across the diagonal of the square
-    cv2.line(img, pt2, pt4, (255, 0, 0), 3)
+    cv2.line(img, pt2, pt4, draw.LIGHTBLUE, draw.THICKNESS_S)
     draw.drawCurvedArrow(img, pt1, pt2, pt3, pt4)
 
-
 instruction1 = "Fold paper in half"
-# image path is unused because findSquare overrides the checkShape method
-step1 = Step(1, 'assets/step2.png', draw1, instruction1,
-             False, checkShapeOverride=findSquare)
-step1.vertices_count = 4  # override vertices count
+step1 = Step(1, '', draw1, instruction1,
+             False, checkShapeOverride=findSquare, verticesCount=4)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 2a ~~~~~~~~~~~~~~~~~~~
@@ -236,17 +213,14 @@ def draw2a(img, ref_cnt, bounding_rect):
 
     long_edge = max(ab, bc, ac)
     if ab == long_edge:
-        # mid = ((ax+bx)/2, (ay+by)/2)
         base1 = (ax, ay)
         base2 = (bx, by)
         top = (cx, cy)
     elif bc == long_edge:
-        # mid = ((cx+bx)/2, (cy+by)/2)
         base1 = (bx, by)
         base2 = (cx, cy)
         top = (ax, ay)
     else:  # ac
-        # mid = ((cx+ax)/2, (cy+ay)/2)
         base1 = (ax, ay)
         base2 = (cx, cy)
         top = (bx, by)
@@ -256,7 +230,7 @@ def draw2a(img, ref_cnt, bounding_rect):
     r = 0.3827
     line_end = (r*base2[0] + (1-r)*top[0], r*base2[1] + (1-r)*top[1])
     line_end = convertToIntPoint(line_end)
-    cv2.line(img, line_start, line_end, (255, 0, 0), 3)
+    cv2.line(img, line_start, line_end, draw.LIGHTBLUE, draw.THICKNESS_S)
 
     # draw curved arrow
     arrow_a = top
@@ -265,15 +239,16 @@ def draw2a(img, ref_cnt, bounding_rect):
     arrow_d = ((base1[0]+top[0])/2, (base1[1]+top[1])/2)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-
 instruction2a = "Fold the top layer along the dotted line, aligning the edges."
 step2a = Step(2, 'assets/step2.png', draw2a, instruction2a,
               False, checkShapeOverride=findTriangle)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
-# ref_cnt: (top, base1, base2) where base2 is the vertex next to the concave vertex
 def draw3a(img, ref_cnt, bounding_rect):
+    """ 
+    @param ref_cnt: triangle whose vertices are in the order of (top, base1, base2)
+    """
     cnt = ref_cnt.reshape(3, 2)
     top, base1, base2 = cnt
 
@@ -295,7 +270,7 @@ def draw3a(img, ref_cnt, bounding_rect):
     line_end = (r2*base1[0] + (1-r2)*base2[0], r2*base1[1] + (1-r2)*base2[1])
     line_start = convertToIntPoint(line_start)
     line_end = convertToIntPoint(line_end)
-    cv2.line(img, line_start, line_end, (255, 0, 0), 3)
+    cv2.line(img, line_start, line_end, draw.LIGHTBLUE, draw.THICKNESS_S)
 
     # -- draw curved arrow
     # compute the center of the contour
@@ -312,7 +287,6 @@ def draw3a(img, ref_cnt, bounding_rect):
     arrow_d = (arrow_dX, arrow_dY)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-
 instruction3a = "Fold all layers along the dotted line."
 step3a = Step(3, 'assets/step2.png', draw3a, instruction3a,
               False, checkShapeOverride=findTriangleWithFold)
@@ -322,13 +296,12 @@ step3a = Step(3, 'assets/step2.png', draw3a, instruction3a,
 def draw4(img, ref_cnt, bounding_rect):
     pass
 
-
 instruction4 = "Origami completed! Well done!!"
 step4 = Step(4, 'assets/new_step4.png', draw4, instruction4, False)
 
 
-# steps.append(step1)
-# steps.append(step2a)
+steps.append(step1)
+steps.append(step2a)
 steps.append(step3a)
 steps.append(step4)
 
@@ -385,8 +358,6 @@ step2 = Step(2, 'assets/step2.png', draw2, instruction2, False)
 # steps.append(step2)
 
 # ~~~~~~~~~~~~~~~~~ Step 3 (deprecated) ~~~~~~~~~~~~~~~~~~~
-
-
 def draw3(img, ref_cnt, bounding_rect, angle=0, scale_factor=1):
     ref_cnt = ref_cnt.reshape(7, 2)
     # identify correct points by finding the vertex connected to the longest edge
@@ -402,13 +373,13 @@ def draw3(img, ref_cnt, bounding_rect, angle=0, scale_factor=1):
     base2 = convertToIntPoint(ref_cnt[(vertex+1) % 7])
     top = convertToIntPoint(ref_cnt[(i+4) % 7])
 
-    cv2.circle(img, base1, 8, styles.RED, -1)
-    cv2.circle(img, base2, 8, styles.RED, -1)
-    cv2.circle(img, top, 8, styles.RED)
+    cv2.circle(img, base1, 8, draw.RED, -1)
+    cv2.circle(img, base2, 8, draw.RED, -1)
+    cv2.circle(img, top, 8, draw.RED)
 
     # paper lines
-    cv2.line(img, base1, top, styles.GREEN, 3)
-    cv2.line(img, base2, top, styles.GREEN, 3)
+    cv2.line(img, base1, top, draw.GREEN, 3)
+    cv2.line(img, base2, top, draw.GREEN, 3)
 
     # instruction lines
     pt1 = (0.2*top[0] + 0.8*base1[0], 0.2*top[1] + 0.8*base1[1])

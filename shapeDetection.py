@@ -1,7 +1,8 @@
 import cv2
-import numpy as np
 from matplotlib import pyplot as plt
-import styles
+import numpy as np
+
+import draw
 
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -33,12 +34,12 @@ def detectShape(mask, dimg=[], minArea=1000):
             result.append(approx)
 
             if len(dimg) > 0:
-                cv2.drawContours(dimg, [approx], 0, BLUE, 2)
-                #cv2.putText(dimg, str(len(approx)), tuple(cnt[0][0]), cv2.FONT_HERSHEY_SIMPLEX, 1, BLUE)
+                cv2.drawContours(dimg, [approx], 0, draw.DEBUG_GREEN, 2)
+                #cv2.putText(dimg, str(len(approx)), tuple(cnt[0][0]), cv2.FONT_HERSHEY_SIMPLEX, 1, draw.DEBUG_GREEN)
 
     return result
 
-
+# currently unused
 def detectLines(img, t1, t2, dimg):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.GaussianBlur(img, (3, 3), 0, imgGray)
@@ -63,7 +64,7 @@ def detectLines(img, t1, t2, dimg):
 
 
 def findSquare(mask, dimg=[]):
-    ''' Finds square in image and draw an outline (disabled), returns the reshaped square contour '''
+    ''' Finds square in image and draws an outline (debug), returns the reshaped square contour '''
     contours = detectShape(mask, dimg)
 
     for cnt in contours:
@@ -80,15 +81,13 @@ def findSquare(mask, dimg=[]):
             v3 = abs(l2-l1) < (0.3*l2)
             if v1 and v2 and v3:
                 return shape
-            else:
-                # cv2. drawContours(dimg, [cnt], 0, GREEN, 3)
-                # cv2.imshow('Contour', dimg)
+            elif len(dimg) > 0:
                 print('l1: {}, l2: {}, l3: {}, l4: {}'.format(l1, l2, l3, l4))
     return []
 
 
 def findTriangle(mask, dimg=[]):
-    ''' Finds triangle in image and draw an outline (debug), returns the reshaped triangle contour '''
+    ''' Finds triangle in image and draws an outline (debug), returns the reshaped triangle contour '''
     contours = detectShape(mask, dimg)
     for cnt in contours:
         if len(cnt) == 3:
@@ -102,11 +101,11 @@ def findTriangle(mask, dimg=[]):
             v2 = abs(l2 - (l1+l3)) < (0.2*l2)
             v3 = abs(l3 - (l2+l1)) < (0.2*l3)
             if v1 or v2 or v3:
-                # cv2.drawContours(dimg, [cnt], 0, GREEN, 3)
                 return shape
-            else:
+            elif len(dimg) > 0:
                 print('l1: {}, l2: {}, l3: {}'.format(l1, l2, l3))
     return []
+
 
 def findTriangleWithFold(mask, dimg=[]):
     ''' Finds triangle in image and draw an outline (debug), returns the triangle contour, with the top vertex at index 0 '''
@@ -130,7 +129,7 @@ def findTriangleWithFold(mask, dimg=[]):
                     shape = np.array([c, b, d])
 
                 if len(dimg) > 0:
-                    cv2.drawContours(dimg, [shape], 0, (255,255,0), 2)
+                    cv2.drawContours(dimg, [shape], 0, draw.DEBUG_GREEN, 2)
                 return shape
 
             else:

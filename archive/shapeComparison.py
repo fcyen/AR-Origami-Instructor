@@ -29,7 +29,6 @@ def scale(point, center, factor):
     y2 = factor * y1 + (1-factor) * yc
     return convertToIntPoint((x2, y2))
 
-# TODO
 
 
 def detectContour(img, disp_img=[], offset=(0, 0)):

@@ -61,3 +61,29 @@ while True:
     # x1 = min(ref_x1, ref_x2) + padding
     # x2 = max(ref_x1, ref_x2) - padding
     # drawCurve(dimg, x1, x2)
+
+
+# def perspectiveWarp(self, img, rect):
+    # width = int(rect[1][0])
+    # height = int(rect[1][1])
+    # box = cv2.boxPoints(rect)
+    # box = np.int0(box)
+    # src_pts = box.astype("float32")
+    # dst_pts = np.array([[0, height-1],
+    #                     [0, 0],
+    #                     [width-1, 0],
+    #                     [width-1, height-1]], dtype="float32")
+    # matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
+    # warped = cv2.warpPerspective(img, matrix, (width, height))
+    # return warped
+
+# def alignContours(self, bimg):
+    # cnt_feed = self.detectContour(bimg)
+    # rect_feed = cv2.minAreaRect(cnt_feed)
+    # warped_feed = self.perspectiveWarp(bimg, rect_feed)
+    # warped_ref = self.perspectiveWarp(self.ref_bin, self.bounding_rect)
+    # new_h, new_w = warped_feed.shape
+    # resized_warped_ref = cv2.resize(warped_ref, (new_w, new_h))
+    # plt.subplot(121), plt.imshow(warped_feed)
+    # plt.subplot(122), plt.imshow(resized_warped_ref)
+    # plt.show()
