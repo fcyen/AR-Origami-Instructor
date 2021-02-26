@@ -1,1 +1,1 @@
-{"0": {"LowerHSV": [0, 0, 38], "UpperHSV": [145, 143, 255]}, "1": {"Threshold1": [40, 255], "Threshold2": [183, 255]}, "2": {"LowerHSV": [0, 0, 64], "UpperHSV": [50, 204, 255]}, "3": {"LowerHSV": [45, 0, 143], "UpperHSV": [154, 56, 255]}}
+{"0": {"LowerHSV": [0, 0, 74], "UpperHSV": [154, 216, 255]}, "1": {"Threshold1": [40, 255], "Threshold2": [183, 255]}, "2": {"LowerHSV": [0, 35, 111], "UpperHSV": [65, 203, 255]}, "3": {"LowerHSV": [0, 0, 39], "UpperHSV": [179, 255, 255]}}

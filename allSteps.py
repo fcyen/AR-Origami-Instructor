@@ -1,17 +1,14 @@
 import cv2
+import math
 
 import draw
 from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance
 
-steps = []  # array of Step instances
-DEBUG = True
 
-# # retrieve saved values
-# with open('trackbarValues.json') as json_file:
-#     raw = json.load(json_file)
-#     hsv_y = raw[str(2)]
-#     lowerHSV_yellow = np.array(hsv_y["LowerHSV"])
-#     upperHSV_yellow = np.array(hsv_y["UpperHSV"])
+convertToIntPoint = draw.convertToIntPoint
+
+steps = []  # array of Step instances
+DEBUG = False
 
 
 class Step:
@@ -28,6 +25,7 @@ class Step:
         self.bouding_rect = []
         self.draw = draw_fn
         self.instruction = instruction
+        self.vertices_count = vertices_count
         self.kwargs = kwargs
 
         # -- get the reference image's contour --
@@ -144,11 +142,23 @@ class Step:
                 cnt_feed = self.detectContour(bimg)
 
             # make sure the number of vertices is correct
-            if len(cnt_feed) == self.vertices_count:
+            if self.id == 4:
+                draw.putInstruction(dimg, self.instruction[0])
+                self.other_count += 1
+                if self.other_count > 6:
+                    self.other_count = 0
+                self.draw(dimg, cnt_feed, self.other_count/10)
+
+            elif len(cnt_feed) == self.vertices_count:
                 cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
                 self.draw(dimg, cnt_feed, [])
                 self.match_count += 1
-                draw.putInstruction(dimg, self.instruction)
+
+                # instructions
+                x = 0
+                for instr in self.instruction:
+                    draw.putInstruction(dimg, self.instruction[x], position=(60, 60+(30*x)))
+                    x += 1
 
             else:
                 if DEBUG:
@@ -171,22 +181,6 @@ class Step:
             return True
 
 
-# =============== Utilities ================
-
-def convertToIntPoint(point):
-    return (int(point[0]), int(point[1]))
-
-
-def rotate(point, center, angle):
-    angle = angle/180 * math.pi  # convert to radians
-    x1, y1 = point
-    xc, yc = center
-    x2 = ((x1 - xc) * math.cos(angle)) - ((y1 - yc) * math.sin(angle)) + xc
-    y2 = ((x1 - xc) * math.sin(angle)) + ((y1 - yc) * math.cos(angle)) + yc
-    return convertToIntPoint((x2, y2))
-# ==========================================
-
-
 # ~~~~~~~~~~~~~~~~~ Step 1 ~~~~~~~~~~~~~~~~~~~
 def draw1(img, ref_cnt, bounding_rect):
     pt1 = tuple(ref_cnt[0])
@@ -197,9 +191,9 @@ def draw1(img, ref_cnt, bounding_rect):
     cv2.line(img, pt2, pt4, draw.LIGHTBLUE, draw.THICKNESS_S)
     draw.drawCurvedArrow(img, pt1, pt2, pt3, pt4)
 
-instruction1 = "Fold paper in half"
+instruction1 = ["Fold paper in half"]
 step1 = Step(1, '', draw1, instruction1,
-             False, checkShapeOverride=findSquare, verticesCount=4)
+            vertices_count=4, checkShapeOverride=findSquare)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 2a ~~~~~~~~~~~~~~~~~~~
@@ -239,9 +233,9 @@ def draw2a(img, ref_cnt, bounding_rect):
     arrow_d = ((base1[0]+top[0])/2, (base1[1]+top[1])/2)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-instruction2a = "Fold the top layer along the dotted line, aligning the edges."
+instruction2a = ["Fold the top layer along the", "light blue line, aligning the edges"]
 step2a = Step(2, 'assets/step2.png', draw2a, instruction2a,
-              False, checkShapeOverride=findTriangle)
+            checkShapeOverride=findTriangle)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
@@ -278,26 +272,39 @@ def draw3a(img, ref_cnt, bounding_rect):
     cX = int(M["m10"] / M["m00"])
     cY = int(M["m01"] / M["m00"])
     center = (cX, cY)
-    arrow_a = rotate(base2, center, 15)
-    arrow_b = rotate(top, center, 15)
-    arrow_c = rotate(base1, center, 15)
+    arrow_a = draw.rotate(base2, center, -20)
+    arrow_b = draw.rotate(top, center, -20)
+    arrow_c = draw.rotate(base1, center, -20)
     # find 4th vertex
     arrow_dX = arrow_a[0] + arrow_c[0] - arrow_b[0]
     arrow_dY = arrow_a[1] + arrow_c[1] - arrow_b[1]
     arrow_d = (arrow_dX, arrow_dY)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-instruction3a = "Fold all layers along the dotted line."
-step3a = Step(3, 'assets/step2.png', draw3a, instruction3a,
-              False, checkShapeOverride=findTriangleWithFold)
+instruction3a = ["Fold all layers along the", "light blue line"]
+step3a = Step(3, '', draw3a, instruction3a,
+              vertices_count=3, checkShapeOverride=findTriangleWithFold)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 4 ~~~~~~~~~~~~~~~~~~~
-def draw4(img, ref_cnt, bounding_rect):
-    pass
+def draw4(img, ref_cnt, time):
+    if len(ref_cnt) == 7:
+        hull = cv2.convexHull(ref_cnt, returnPoints=False)
+        if len(hull) == 5:
+            tip = (21 - hull.sum())/2
+            if tip == 2.5: # 5 and 0
+                tip = 6
+            elif tip == 3.5: # 6 and 1
+                tip = 0
+            else:
+                tip = int(tip)
 
-instruction4 = "Origami completed! Well done!!"
-step4 = Step(4, 'assets/new_step4.png', draw4, instruction4, False)
+            pt1 = ref_cnt[(tip+3)%7][0]
+            pt2 = ref_cnt[(tip-3)%7][0]
+            draw.drawWave(img, pt1, pt2, time)
+
+instruction4 = ["Origami completed! Well done!!"]
+step4 = Step(4, 'assets/new_step4.png', draw4, instruction4)
 
 
 steps.append(step1)

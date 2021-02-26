@@ -44,8 +44,11 @@ def main():
 
         if state == 0:
             if num == 0:
-                text = 'Place paper on the table with the white colour side facing up.'
-                draw.putInstruction(img, text)
+                text1 = 'Place paper on the table with'
+                text2 = 'the white colour side facing up.'
+                draw.putInstruction(img, text1)
+                draw.putInstruction(img, text2, position=(60, 90))
+
 
             if step.checkShape(img_masked, img):
                 num += 1
@@ -57,7 +60,8 @@ def main():
                 state = 0
                 if num == len(steps):
                     print("Well done!")
-                    time.sleep(5)
+                    step.showNextStep(img, img_masked)
+                    time.sleep(2)
                     cap.release()
                     cv2.destroyAllWindows()
                     break

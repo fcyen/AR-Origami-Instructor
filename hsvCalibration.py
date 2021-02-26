@@ -1,14 +1,14 @@
 import cv2
+import math
 import numpy as np
 import json
 from trackbar import Trackbars
 from trackbar2 import Trackbar
 import shapeDetection as shape
-import styles
 import draw
 import time
 from sys import platform
-from shapeDetection import detectShape, findTriangleWithFold
+from shapeDetection import detectShape, findTriangleWithFold, calculatedSquaredDistance
 
 HSV = 0
 CANNY = 1
@@ -46,7 +46,8 @@ def startWebcam():
     tb = Trackbars(lowerHSV, upperHSV)
     cannyTb = Trackbar(canny, "Canny Thresholds")
 
-    state = 2
+    state = 3
+    t = 0
 
     while True:
         success, img = cap.read()
@@ -163,8 +164,20 @@ def startWebcam():
             time.sleep(5)
             break
 
-        elif state == 2: 
-            print(mask.sum())
+        elif state == 2:    # misc testing
+            pt1 = (100, 200)
+            r = 200
+            x = math.cos(math.radians(t)) * r + 200
+            y = math.sin(math.radians(t)) * r + 200
+            pt2 = (int(x), int(y))
+            pt2 = (600, 300)
+            dist = calculatedSquaredDistance(pt1, pt2)
+            cv2.line(img_copy, pt1, pt2, draw.DEBUG_GREEN, 2)
+            draw.drawWave(img_copy, pt1, pt2, t)
+            t += 0.2
+            if t > 6.2:
+                t = 0
+            time.sleep(0.2)
 
 
         cv2.namedWindow('Result')

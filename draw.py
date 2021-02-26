@@ -2,8 +2,6 @@ import cv2
 import math
 import numpy as np
 
-import shapeComparison
-
 
 # set up a basic canvas here
 img = np.zeros(shape=(512, 512, 3), dtype=np.int8)
@@ -76,11 +74,70 @@ def drawTriangle(dimg, v1, vm, color=LIGHTBLUE, thickness=THICKNESS_M):
     cv2.fillPoly(dimg, [pts], color=color)
 
 
-def putInstruction(dimg, text, scale=1, colour=BLUE, thickness=2, position=(100,100), font=cv2.FONT_HERSHEY_DUPLEX):
+def putInstruction(dimg, text, scale=0.8, colour=BLUE, thickness=1, position=(60,60), font=cv2.FONT_HERSHEY_DUPLEX):
     cv2.putText(dimg, text, position, font, scale, colour, thickness)
 
 
-# ====== other math functions ======
+def drawWave(dimg, pt_a, pt_b, time, color=LIGHTBLUE, thickness=THICKNESS_S):
+    wave_points = []
+    wave_points_2 = []
+    wave_points_3 = []
+
+    amp = 20
+    rad = time
+    step = 0.02
+
+    xa, ya = pt_a
+    xb, yb = pt_b
+    mid = ((xa+xb)/2, (ya+yb)/2)
+    angle_rad = math.atan(abs(ya-yb)/abs(xa-xb))
+    angle = math.degrees(angle_rad)
+    print(angle)
+
+    for x in range(640):
+        y = amp*math.sin(rad)
+
+        pt = (x, y+mid[1])
+        pt = rotate(pt, mid, angle)
+        wave_points.append(pt)
+
+        pt2 = (x, y+mid[1]+70)
+        pt2 = rotate(pt2, (mid[0], mid[1]+70), angle)
+        wave_points_2.append(pt2)
+
+        pt3 = (x, y+mid[1]+140)
+        pt3 = rotate(pt3, (mid[0], mid[1]+140), angle)
+        wave_points_3.append(pt3)
+
+        rad += step
+        if rad > 6.28:
+            rad = 0
+
+    cv2.polylines(dimg, np.array(
+        [wave_points], dtype=np.int32), False, color, thickness=thickness)
+    cv2.polylines(dimg, np.array(
+        [wave_points_2], dtype=np.int32), False, color, thickness=thickness)
+    cv2.polylines(dimg, np.array(
+        [wave_points_3], dtype=np.int32), False, color, thickness=thickness)
+
+
+
+# =============== Utilities ================
+
+def convertToIntPoint(point):
+    return (int(point[0]), int(point[1]))
+
+
+def rotate(point, center, angle):
+    angle = angle/180 * math.pi  # convert to radians
+    x1, y1 = point
+    xc, yc = center
+    x2 = ((x1 - xc) * math.cos(angle)) - ((y1 - yc) * math.sin(angle)) + xc
+    y2 = ((x1 - xc) * math.sin(angle)) + ((y1 - yc) * math.cos(angle)) + yc
+    return convertToIntPoint((x2, y2))
+
+
+# unused
 def equationroots(a, b, c):
     dis = b * b - 4 * a * c
     sqrt_val = math.sqrt(abs(dis))
@@ -97,7 +154,7 @@ def equationroots(a, b, c):
     else:  # complex roots
         return [-1, -1]
 
-# ==================================
+# ==========================================
 
 # -- Finding 4th vertex of a square --
 # cx = int((pt_a[0]+pt_c[0])/2)
