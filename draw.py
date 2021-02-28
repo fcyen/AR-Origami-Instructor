@@ -8,8 +8,10 @@ img = np.zeros(shape=(512, 512, 3), dtype=np.int8)
 
 # ------ constants -------
 RED = (0, 0, 255)
-DEBUG_GREEN = (130, 229, 122)
-BLUE = (238, 97, 67)
+# DEBUG_GREEN = (130, 229, 122)
+# BLUE = (238, 97, 67)
+DEBUG_GREEN = (238, 97, 67)
+BLUE = (130, 229, 122)  # changed to green colour for visibility
 LIGHTBLUE = (240, 201, 76)
 THICKNESS_S = 2
 THICKNESS_M = 3
@@ -74,7 +76,7 @@ def drawTriangle(dimg, v1, vm, color=LIGHTBLUE, thickness=THICKNESS_M):
     cv2.fillPoly(dimg, [pts], color=color)
 
 
-def putInstruction(dimg, text, scale=0.8, colour=BLUE, thickness=1, position=(60,60), font=cv2.FONT_HERSHEY_DUPLEX):
+def putInstruction(dimg, text, scale=0.8, colour=BLUE, thickness=2, position=(60, 60), font=cv2.FONT_HERSHEY_DUPLEX):
     cv2.putText(dimg, text, position, font, scale, colour, thickness)
 
 
@@ -119,7 +121,6 @@ def drawWave(dimg, pt_a, pt_b, time, color=LIGHTBLUE, thickness=THICKNESS_S):
         [wave_points_2], dtype=np.int32), False, color, thickness=thickness)
     cv2.polylines(dimg, np.array(
         [wave_points_3], dtype=np.int32), False, color, thickness=thickness)
-
 
 
 # =============== Utilities ================

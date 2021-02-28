@@ -44,8 +44,8 @@ def main():
 
         if state == 0:
             if num == 0:
-                text1 = 'Place paper on the table with'
-                text2 = 'the white colour side facing up.'
+                text1 = 'Place paper on the table'
+                text2 = '(white colour side facing up)'
                 draw.putInstruction(img, text1)
                 draw.putInstruction(img, text2, position=(60, 90))
 

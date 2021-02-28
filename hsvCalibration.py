@@ -36,7 +36,7 @@ def startWebcam():
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
         raw = json.load(json_file)
-        hsv = raw[str(HSV_YELLOW)]
+        hsv = raw[str(HSV_WHITE)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
         canny = raw[str(CANNY)]
@@ -178,7 +178,6 @@ def startWebcam():
             if t > 6.2:
                 t = 0
             time.sleep(0.2)
-
 
         cv2.namedWindow('Result')
         cv2.imshow("Result", img_copy)

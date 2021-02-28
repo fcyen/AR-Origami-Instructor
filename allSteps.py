@@ -70,6 +70,8 @@ class Step:
 
                 # use the approximated contour
                 result.append(approx)
+            elif DEBUG:
+                print('Area: ' + str(area))
 
         if len(result) > 0:
             return result[0]    # assume first one is the correct one
@@ -132,7 +134,6 @@ class Step:
             self.match_count = 0
             return False
 
-
     def showNextStep(self, dimg, bimg):
         ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
         if self.match_count < 500:
@@ -157,7 +158,8 @@ class Step:
                 # instructions
                 x = 0
                 for instr in self.instruction:
-                    draw.putInstruction(dimg, self.instruction[x], position=(60, 60+(30*x)))
+                    draw.putInstruction(
+                        dimg, self.instruction[x], position=(60, 60+(30*x)))
                     x += 1
 
             else:
@@ -191,9 +193,10 @@ def draw1(img, ref_cnt, bounding_rect):
     cv2.line(img, pt2, pt4, draw.LIGHTBLUE, draw.THICKNESS_S)
     draw.drawCurvedArrow(img, pt1, pt2, pt3, pt4)
 
+
 instruction1 = ["Fold paper in half"]
 step1 = Step(1, '', draw1, instruction1,
-            vertices_count=4, checkShapeOverride=findSquare)
+             vertices_count=4, checkShapeOverride=findSquare)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 2a ~~~~~~~~~~~~~~~~~~~
@@ -233,9 +236,11 @@ def draw2a(img, ref_cnt, bounding_rect):
     arrow_d = ((base1[0]+top[0])/2, (base1[1]+top[1])/2)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-instruction2a = ["Fold the top layer along the", "light blue line, aligning the edges"]
+
+instruction2a = ["Fold the top layer along the",
+                 "blue line"]
 step2a = Step(2, 'assets/step2.png', draw2a, instruction2a,
-            checkShapeOverride=findTriangle)
+              checkShapeOverride=findTriangle)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
@@ -250,12 +255,14 @@ def draw3a(img, ref_cnt, bounding_rect):
         t = tuple(top)
         b1 = tuple(base1)
         b2 = tuple(base2)
-        cv2.circle(img, t, 3, (0,255,255), -1)
-        cv2.putText(img, 'top', t, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
-        cv2.circle(img, b1, 3, (0,255,255), -1)
-        cv2.putText(img, 'base1', b1, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
-        cv2.circle(img, b2, 3, (0,255,255), -1)
-        cv2.putText(img, 'base2', b2, cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255))
+        cv2.circle(img, t, 3, (0, 255, 255), -1)
+        cv2.putText(img, 'top', t, cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 255))
+        cv2.circle(img, b1, 3, (0, 255, 255), -1)
+        cv2.putText(img, 'base1', b1,
+                    cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 255))
+        cv2.circle(img, b2, 3, (0, 255, 255), -1)
+        cv2.putText(img, 'base2', b2,
+                    cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 255))
 
     # -- draw line
     r1 = 0.2
@@ -281,7 +288,8 @@ def draw3a(img, ref_cnt, bounding_rect):
     arrow_d = (arrow_dX, arrow_dY)
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
-instruction3a = ["Fold all layers along the", "light blue line"]
+
+instruction3a = ["Fold along the blue line"]
 step3a = Step(3, '', draw3a, instruction3a,
               vertices_count=3, checkShapeOverride=findTriangleWithFold)
 
@@ -292,16 +300,17 @@ def draw4(img, ref_cnt, time):
         hull = cv2.convexHull(ref_cnt, returnPoints=False)
         if len(hull) == 5:
             tip = (21 - hull.sum())/2
-            if tip == 2.5: # 5 and 0
+            if tip == 2.5:  # 5 and 0
                 tip = 6
-            elif tip == 3.5: # 6 and 1
+            elif tip == 3.5:  # 6 and 1
                 tip = 0
             else:
                 tip = int(tip)
 
-            pt1 = ref_cnt[(tip+3)%7][0]
-            pt2 = ref_cnt[(tip-3)%7][0]
+            pt1 = ref_cnt[(tip+3) % 7][0]
+            pt2 = ref_cnt[(tip-3) % 7][0]
             draw.drawWave(img, pt1, pt2, time)
+
 
 instruction4 = ["Origami completed! Well done!!"]
 step4 = Step(4, 'assets/new_step4.png', draw4, instruction4)
@@ -365,6 +374,8 @@ step2 = Step(2, 'assets/step2.png', draw2, instruction2, False)
 # steps.append(step2)
 
 # ~~~~~~~~~~~~~~~~~ Step 3 (deprecated) ~~~~~~~~~~~~~~~~~~~
+
+
 def draw3(img, ref_cnt, bounding_rect, angle=0, scale_factor=1):
     ref_cnt = ref_cnt.reshape(7, 2)
     # identify correct points by finding the vertex connected to the longest edge
