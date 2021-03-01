@@ -52,13 +52,18 @@ class Step:
             img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         result = []
 
+        if "approx_val" in self.kwargs:
+            approx_val = self.kwargs["approx_val"]
+        else:
+            approx_val = 0.01
+
         for i in range(len(contours)):
             cnt = contours[i]
             area = cv2.contourArea(cnt)
 
             if area > 20000:
                 peri = cv2.arcLength(cnt, True)
-                approx = cv2.approxPolyDP(cnt, 0.01*peri, True)
+                approx = cv2.approxPolyDP(cnt, approx_val*peri, True)
 
                 # draw contour
                 if len(disp_img) > 0 and DEBUG:
@@ -102,9 +107,12 @@ class Step:
         else:
             return False
 
-    def checkShape(self, img_masked, img):
+    def checkShape(self, img, img_masked):
         if "checkShapeOverride" in self.kwargs:
-            if DEBUG:
+            if self.id == 3:
+                shape = self.kwargs['checkShapeOverride'](
+                    img_masked, img, DEBUG)
+            elif DEBUG:
                 shape = self.kwargs['checkShapeOverride'](img_masked, img)
             else:
                 shape = self.kwargs['checkShapeOverride'](img_masked)
@@ -123,7 +131,7 @@ class Step:
             shape_match = self.compareShapes(self.ref_cnt, cnt_feed)
 
         # return True after 10 consecutive matches
-        if shape_match and self.match_count > 10:
+        if shape_match and self.match_count > 20:
             self.match_count = 0
             self.other_count = 0
             return True
@@ -135,55 +143,99 @@ class Step:
             return False
 
     def showNextStep(self, dimg, bimg):
-        ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
-        if self.match_count < 500:
-            if "checkShapeOverride" in self.kwargs:
-                cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
-            else:
-                cnt_feed = self.detectContour(bimg)
+        ''' Displays instruction graphics, returns True if shape still matches '''
+        if "checkShapeOverride" in self.kwargs:
+            cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
+        else:
+            cnt_feed = self.detectContour(bimg)
 
-            # make sure the number of vertices is correct
-            if self.id == 4:
-                draw.putInstruction(dimg, self.instruction[0])
-                self.other_count += 1
-                if self.other_count > 6:
-                    self.other_count = 0
-                self.draw(dimg, cnt_feed, self.other_count/10)
+        # make sure the number of vertices is correct
+        if self.id == 4:
+            draw.putInstruction(dimg, self.instruction[0])
 
-            elif len(cnt_feed) == self.vertices_count:
-                cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
-                self.draw(dimg, cnt_feed, [])
-                self.match_count += 1
+            # for the wave animation
+            self.other_count += 1
+            if self.other_count > 6:
+                self.other_count = 0
 
-                # instructions
-                x = 0
-                for instr in self.instruction:
-                    draw.putInstruction(
-                        dimg, self.instruction[x], position=(60, 60+(30*x)))
-                    x += 1
+            self.draw(dimg, cnt_feed, self.other_count/10)
 
-            else:
-                if DEBUG:
-                    print('Wrong number of vertices! Expected {} got {}'.format(
-                        self.vertices_count, len(cnt_feed)))
-                self.other_count += 1
+        elif len(cnt_feed) == self.vertices_count:
+            cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
+            self.draw(dimg, cnt_feed, [])
+            # self.match_count += 1
 
-                # if contour no longer matches, either
-                # - break if instruction has been shown for sufficient duration
-                # - reset count to zero so that instruction will be shown when contour matches again
-                if self.other_count > 50:
-                    if self.match_count > 80:
-                        return True
-                    else:
-                        self.match_count = 0
-
-            return False
-
-        else:   # finish displaying instructions
+            # instructions
+            x = 0
+            for instr in self.instruction:
+                draw.putInstruction(
+                    dimg, self.instruction[x], position=(60, 60+(30*x)))
+                x += 1
             return True
 
+        else:
+            if DEBUG:
+                print('Wrong number of vertices! Expected {} got {}'.format(
+                    self.vertices_count, len(cnt_feed)))
+            # self.other_count += 1
+
+        return False
+
+    # def showNextStep(self, dimg, bimg):
+    #     ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
+    #     if self.match_count < 500:
+    #         if "checkShapeOverride" in self.kwargs:
+    #             cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
+    #         else:
+    #             cnt_feed = self.detectContour(bimg)
+
+    #         # make sure the number of vertices is correct
+    #         if self.id == 4:
+    #             draw.putInstruction(dimg, self.instruction[0])
+    #             self.other_count += 1
+    #             if self.other_count > 6:
+    #                 self.other_count = 0
+    #             self.draw(dimg, cnt_feed, self.other_count/10)
+
+    #         elif len(cnt_feed) == self.vertices_count:
+    #             cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
+    #             self.draw(dimg, cnt_feed, [])
+    #             self.match_count += 1
+
+    #             # instructions
+    #             x = 0
+    #             for instr in self.instruction:
+    #                 draw.putInstruction(
+    #                     dimg, self.instruction[x], position=(60, 60+(30*x)))
+    #                 x += 1
+
+    #         else:
+    #             if DEBUG:
+    #                 print('Wrong number of vertices! Expected {} got {}'.format(
+    #                     self.vertices_count, len(cnt_feed)))
+    #             self.other_count += 1
+
+    #             # if contour no longer matches, either
+    #             # - break if instruction has been shown for sufficient duration
+    #             # - reset count to zero so that instruction will be shown when contour matches again
+    #             if self.other_count > 50:
+    #                 if self.match_count > 80:
+    #                     return True
+    #                 else:
+    #                     self.match_count = 0
+
+    #         return False
+
+    #     else:   # finish displaying instructions
+    #         return True
+
+
+# ~~~~~~~~~~~~~~~~~ Step 0 ~~~~~~~~~~~~~~~~~~
+step0 = Step(0, '', None, '', 0)
 
 # ~~~~~~~~~~~~~~~~~ Step 1 ~~~~~~~~~~~~~~~~~~~
+
+
 def draw1(img, ref_cnt, bounding_rect):
     pt1 = tuple(ref_cnt[0])
     pt2 = tuple(ref_cnt[1])
@@ -291,7 +343,7 @@ def draw3a(img, ref_cnt, bounding_rect):
 
 instruction3a = ["Fold along the blue line"]
 step3a = Step(3, '', draw3a, instruction3a,
-              vertices_count=3, checkShapeOverride=findTriangleWithFold)
+              vertices_count=3, checkShapeOverride=findTriangleWithFold, approx_val=0.02)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 4 ~~~~~~~~~~~~~~~~~~~
@@ -316,6 +368,7 @@ instruction4 = ["Origami completed! Well done!!"]
 step4 = Step(4, 'assets/new_step4.png', draw4, instruction4)
 
 
+steps.append(step0)
 steps.append(step1)
 steps.append(step2a)
 steps.append(step3a)

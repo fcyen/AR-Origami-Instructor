@@ -1,4 +1,5 @@
 import cv2
+import json
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -6,6 +7,13 @@ import draw
 
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
+
+# retrieve saved values
+with open('trackbarValues.json') as json_file:
+    raw = json.load(json_file)
+    hsv_green = raw[str(3)]  # green colour
+    lowerHSV_green = np.array(hsv_green["LowerHSV"])
+    upperHSV_green = np.array(hsv_green["UpperHSV"])
 
 
 def detectShape(mask, dimg=[], minArea=1000):
@@ -40,6 +48,8 @@ def detectShape(mask, dimg=[], minArea=1000):
     return result
 
 # currently unused
+
+
 def detectLines(img, t1, t2, dimg):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.GaussianBlur(img, (3, 3), 0, imgGray)
@@ -107,52 +117,65 @@ def findTriangle(mask, dimg=[]):
     return []
 
 
-def findTriangleWithFold(mask, dimg=[]):
+def findTriangleWithFold(mask, dimg=[], debug=False):
     ''' Finds triangle in image and draw an outline (debug), returns the triangle contour, with the top vertex at index 0 '''
-    contours = detectShape(mask, dimg)
+    # img_green = cv2.inRange(dimg, lowerHSV_green, upperHSV_green)
+
+    if debug:
+        contours = detectShape(mask, dimg)
+        # contours_green = detectShape(img_green, dimg)
+    else:
+        contours = detectShape(mask)
+        # contours_green = detectShape(img_green)
 
     for cnt in contours:
         if len(cnt) == 5:   # paper is slightly open
             hull = cv2.convexHull(cnt, returnPoints=False)
             if len(hull) == 4:
-                x = 10 - hull.sum() # find out concave vertex index
-                a = cnt[(x+1)%5] # next to x
-                b = cnt[(x+2)%5]
-                c = cnt[(x+3)%5]
-                d = cnt[(x+4)%5] # next to x
+                x = 10 - hull.sum()  # find out concave vertex index
+                a = cnt[(x+1) % 5]  # next to x
+                b = cnt[(x+2) % 5]
+                c = cnt[(x+3) % 5]
+                d = cnt[(x+4) % 5]  # next to x
                 l1 = calculatedSquaredDistance(a[0], c[0])
                 l2 = calculatedSquaredDistance(b[0], d[0])
 
-                if l1 > l2: # ac are bases
+                if l1 > l2:  # ac are bases
                     shape = np.array([b, c, a])
                 else:       # bd are bases
                     shape = np.array([c, b, d])
 
-                if len(dimg) > 0:
+                if debug:
                     cv2.drawContours(dimg, [shape], 0, draw.DEBUG_GREEN, 2)
                 return shape
 
             else:
                 print('hull points: {}'.format(len(hull)))
-        
-        elif len(cnt) == 3:
-            a, b, c = cnt
-            l1 = calculatedSquaredDistance(a[0], b[0])
-            l2 = calculatedSquaredDistance(b[0], c[0])
-            l3 = calculatedSquaredDistance(c[0], a[0])
 
-            # check if a2 + b2 = c2
-            v1 = abs(l1 - (l2+l3)) < (0.2*l1)
-            if v1:  # ab is the long edge
-                return np.array([c, a, b])
+        # elif len(cnt) == 3:
+        #     correct = False
+        #     for cnt_g in contours_green:
+        #         if len(cnt_g) == 3:
+        #             correct = True
+        #             break
+        #     if correct:
+        #         a, b, c = cnt
+        #         l1 = calculatedSquaredDistance(a[0], b[0])
+        #         l2 = calculatedSquaredDistance(b[0], c[0])
+        #         l3 = calculatedSquaredDistance(c[0], a[0])
 
-            v2 = abs(l2 - (l1+l3)) < (0.2*l2)
-            if v2:  # bc is the long edge
-                return np.array([a, b, c])
+        #         # check if a2 + b2 = c2
+        #         v1 = abs(l1 - (l2+l3)) < (0.2*l1)
+        #         if v1:  # ab is the long edge
+        #             return np.array([c, a, b])
 
-            v3 = abs(l3 - (l2+l1)) < (0.2*l3)
-            if v3:  # ac is the long edge
-                return np.array([b, a, c])
+        #         v2 = abs(l2 - (l1+l3)) < (0.2*l2)
+        #         if v2:  # bc is the long edge
+        #             return np.array([a, b, c])
+
+        #         v3 = abs(l3 - (l2+l1)) < (0.2*l3)
+        #         if v3:  # ac is the long edge
+        #             return np.array([b, a, c])
 
     return []
 
