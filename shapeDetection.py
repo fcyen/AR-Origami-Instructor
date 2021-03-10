@@ -152,30 +152,30 @@ def findTriangleWithFold(mask, dimg=[], debug=False):
             else:
                 print('hull points: {}'.format(len(hull)))
 
-        # elif len(cnt) == 3:
-        #     correct = False
-        #     for cnt_g in contours_green:
-        #         if len(cnt_g) == 3:
-        #             correct = True
-        #             break
-        #     if correct:
-        #         a, b, c = cnt
-        #         l1 = calculatedSquaredDistance(a[0], b[0])
-        #         l2 = calculatedSquaredDistance(b[0], c[0])
-        #         l3 = calculatedSquaredDistance(c[0], a[0])
+        elif len(cnt) == 3:
+            #     correct = False
+            #     for cnt_g in contours_green:
+            #         if len(cnt_g) == 3:
+            #             correct = True
+            #             break
+            #     if correct:
+            a, b, c = cnt
+            l1 = calculatedSquaredDistance(a[0], b[0])
+            l2 = calculatedSquaredDistance(b[0], c[0])
+            l3 = calculatedSquaredDistance(c[0], a[0])
 
-        #         # check if a2 + b2 = c2
-        #         v1 = abs(l1 - (l2+l3)) < (0.2*l1)
-        #         if v1:  # ab is the long edge
-        #             return np.array([c, a, b])
+            # check if a2 + b2 = c2
+            v1 = abs(l1 - (l2+l3)) < (0.2*l1)
+            if v1:  # ab is the long edge
+                return np.array([c, a, b])
 
-        #         v2 = abs(l2 - (l1+l3)) < (0.2*l2)
-        #         if v2:  # bc is the long edge
-        #             return np.array([a, b, c])
+            v2 = abs(l2 - (l1+l3)) < (0.2*l2)
+            if v2:  # bc is the long edge
+                return np.array([a, b, c])
 
-        #         v3 = abs(l3 - (l2+l1)) < (0.2*l3)
-        #         if v3:  # ac is the long edge
-        #             return np.array([b, a, c])
+            v3 = abs(l3 - (l2+l1)) < (0.2*l3)
+            if v3:  # ac is the long edge
+                return np.array([b, a, c])
 
     return []
 

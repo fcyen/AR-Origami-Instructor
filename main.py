@@ -24,6 +24,7 @@ def main():
     num = 0
     curStep = steps[num]
     nextStep = steps[num+1]
+    count = 0
 
     def dummyFn(a, b):  # for the first step
         return False
@@ -35,7 +36,7 @@ def main():
         hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        hsv_skin = raw[str(3)]  # green colour
+        hsv_skin = raw[str(2)]  # green colour
         lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
         upperHSV_skin = np.array(hsv_skin["UpperHSV"])
 
@@ -45,7 +46,7 @@ def main():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
-        # img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
+        img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
 
         if state == 0:
             if num == 0:
@@ -56,13 +57,15 @@ def main():
 
             if curStep.showNextStep(img, img_masked):  # return True if shape matches
                 print('cur')
-                pass
+                if num == 3 or num == 2:
+                    count += 1
 
             # return True if shape if confirmed to be correct
             elif nextStep.checkShape(img, img_masked):
                 print('next')
                 if num == len(steps)-2:   # last step
                     print("Well done!")
+                    state = 1
                     nextStep.showNextStep(img, img_masked)
                     # time.sleep(2)
                     # cap.release()
@@ -71,6 +74,7 @@ def main():
 
                 else:
                     num += 1
+                    count = 0
                     curStep = steps[num]
                     nextStep = steps[num+1]
 
@@ -82,7 +86,8 @@ def main():
         #             nextStep = steps[num+1]
         #         state = 1
 
-        # elif state == 1:
+        elif state == 1:
+            nextStep.showNextStep(img, img_masked)
         #     hand_detected = img_skin.sum() > 10000000
         #     if step.showNextStep(img, img_masked) or hand_detected:
         #         state = 0
@@ -105,6 +110,16 @@ def main():
             cap.release()
             cv2.destroyAllWindows()
             break
+
+        # force proceed to next step
+        elif (keyPressed & 0xFF) == ord('n') or (count > 300):
+            if num < (len(steps)-2):
+                num += 1
+                curStep = steps[num]
+                nextStep = steps[num+1]
+            elif num == (len(steps)-2):
+                num
+                curStep = steps[0]
 
 
 main()

@@ -9,6 +9,8 @@ import draw
 import time
 from sys import platform
 from shapeDetection import detectShape, findTriangleWithFold, calculatedSquaredDistance
+from archive.shapeComparison import detectContour
+
 
 HSV = 0
 CANNY = 1
@@ -55,7 +57,7 @@ def startWebcam():
     tb2 = Trackbars(l2, u2)
     cannyTb = Trackbar(canny, "Canny Thresholds")
 
-    state = 3
+    state = 2
     t = 0
     l_hsv = lowerHSV
     u_hsv = upperHSV
@@ -190,19 +192,7 @@ def startWebcam():
             break
 
         elif state == 2:    # misc testing
-            pt1 = (100, 200)
-            r = 200
-            x = math.cos(math.radians(t)) * r + 200
-            y = math.sin(math.radians(t)) * r + 200
-            pt2 = (int(x), int(y))
-            pt2 = (600, 300)
-            dist = calculatedSquaredDistance(pt1, pt2)
-            cv2.line(img_copy, pt1, pt2, draw.DEBUG_GREEN, 2)
-            draw.drawWave(img_copy, pt1, pt2, t)
-            t += 0.2
-            if t > 6.2:
-                t = 0
-            time.sleep(0.2)
+            detectContour(mask, img_copy)
 
         cv2.namedWindow('Result')
         cv2.imshow("Result", img_copy)

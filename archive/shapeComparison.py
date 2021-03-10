@@ -30,7 +30,6 @@ def scale(point, center, factor):
     return convertToIntPoint((x2, y2))
 
 
-
 def detectContour(img, disp_img=[], offset=(0, 0)):
     ''' Returns first contour detected in the image'''
     # draw boundaries
@@ -39,33 +38,34 @@ def detectContour(img, disp_img=[], offset=(0, 0)):
         cv2.rectangle(disp_img, (CROP_X, CROP_Y),
                       (height+CROP_X, width+CROP_Y), (0, 0, 255), 5)
 
-    img_blur = cv2.GaussianBlur(img, (3, 3), 1)
+    # img = cv2.GaussianBlur(img, (3, 3), 1)
     contours, _ = cv2.findContours(
-        img_blur, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     result = []
 
     for i in range(len(contours)):
         cnt = contours[i]
         area = cv2.contourArea(cnt)
         # print(area)
-        if area > 10000:
+        if area > 20000:
             peri = cv2.arcLength(cnt, True)
-            approx = cv2.approxPolyDP(cnt, 0.005*peri, True)
+            approx = cv2.approxPolyDP(cnt, 0.01*peri, True)
             l = len(approx)
             result.append(approx.reshape(l, 2))
 
             if len(disp_img) > 0:
                 cv2.drawContours(disp_img, [approx],
-                                 0, (255, 0, 0), 10, offset=offset)
-                cv2.putText(disp_img, str(
-                    area), (approx[0][0][0]+50, approx[0][0][1]+50), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2)
+                                 0, (255, 0, 0), 3, offset=offset)
+                # cv2.putText(disp_img, str(
+                #     area), (approx[0][0][0]+50, approx[0][0][1]+50), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2)
 
                 # %% to label contour points %%
-                for i in range(len(approx)):
-                    cv2.putText(disp_img, str(
-                        i), (approx[i][0][0]+10, approx[i][0][1]+10), cv2.FONT_HERSHEY_PLAIN, 5, (255, 255, 0), 5)
-                cv2.imshow('Image', disp_img)
-                cv2.waitKey(0)
+                # for i in range(len(approx)):
+                #     cv2.putText(disp_img, str(
+                #         i), (approx[i][0][0]+10, approx[i][0][1]+10), cv2.FONT_HERSHEY_PLAIN, 5, (255, 255, 0), 5)
+
+                # cv2.imshow('Image', disp_img)
+                # cv2.waitKey(0)
 
     if len(result) > 0:
         return result[0]    # assume first one is the correct one

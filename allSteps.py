@@ -9,6 +9,7 @@ convertToIntPoint = draw.convertToIntPoint
 
 steps = []  # array of Step instances
 DEBUG = False
+D_ER = 1.2
 
 
 class Step:
@@ -34,7 +35,6 @@ class Step:
             self.ref_bin = self.getBinarizedImage(ref_img)
             self.ref_cnt = self.detectContour(self.ref_bin, ref_img)
             self.vertices_count = len(self.ref_cnt)
-            # cv2.imshow('Step '+str(id), ref_img)
             self.bounding_rect = cv2.minAreaRect(self.ref_cnt)
             if len(self.ref_cnt) < 1:
                 print('No contour detected for reference image!')
@@ -75,8 +75,8 @@ class Step:
 
                 # use the approximated contour
                 result.append(approx)
-            elif DEBUG:
-                print('Area: ' + str(area))
+            # elif DEBUG:
+            #     print('Area: ' + str(area))
 
         if len(result) > 0:
             return result[0]    # assume first one is the correct one
@@ -102,7 +102,7 @@ class Step:
         if DEBUG:
             print('d = ' + str(d))
         # see excel file for experiment results
-        if d < 0.9 and d >= 0:
+        if d < D_ER and d >= 0:
             return True
         else:
             return False
@@ -138,8 +138,8 @@ class Step:
 
         elif shape_match:
             self.match_count += 1
-        else:
-            self.match_count = 0
+        elif self.match_count > 0:
+            self.match_count -= 2
             return False
 
     def showNextStep(self, dimg, bimg):
@@ -348,6 +348,7 @@ step3a = Step(3, '', draw3a, instruction3a,
 
 # ~~~~~~~~~~~~~~~~~ Step 4 ~~~~~~~~~~~~~~~~~~~
 def draw4(img, ref_cnt, time):
+
     if len(ref_cnt) == 7:
         hull = cv2.convexHull(ref_cnt, returnPoints=False)
         if len(hull) == 5:
@@ -363,9 +364,24 @@ def draw4(img, ref_cnt, time):
             pt2 = ref_cnt[(tip-3) % 7][0]
             draw.drawWave(img, pt1, pt2, time)
 
+    elif len(ref_cnt) == 6:
+        hull = cv2.convexHull(ref_cnt, returnPoints=False)
+        if len(hull) == 4:
+            tip = (16 - hull.sum())/2
+            if tip == 2:  # 5 and 0
+                tip = 5
+            elif tip == 3:  # 5 and 1
+                tip = 0
+            else:
+                tip = int(tip)
+
+            pt1 = ref_cnt[(tip+3) % 6][0]
+            pt2 = ref_cnt[(tip-2) % 6][0]
+            draw.drawWave(img, pt1, pt2, time)
+
 
 instruction4 = ["Origami completed! Well done!!"]
-step4 = Step(4, 'assets/new_step4.png', draw4, instruction4)
+step4 = Step(4, 'assets/step4c.png', draw4, instruction4, approx_val=0.01)
 
 
 steps.append(step0)
