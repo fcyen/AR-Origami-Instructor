@@ -14,8 +14,8 @@ from archive.shapeComparison import detectContour
 
 HSV = 0
 CANNY = 1
-HSV_YELLOW = 2
-HSV_WHITE = 3
+HSV_A = 2
+HSV_B = 3
 TEXT_POS = (100, 100)
 
 """
@@ -41,16 +41,16 @@ def startWebcam():
         hsv = raw[str(HSV)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        hsv1 = raw[str(HSV_YELLOW)]
+        hsv1 = raw[str(HSV_A)]
         l1 = np.array(hsv1["LowerHSV"])
         u1 = np.array(hsv1["UpperHSV"])
-        hsv2 = raw[str(HSV_WHITE)]
+        hsv2 = raw[str(HSV_B)]
         l2 = np.array(hsv2["LowerHSV"])
         u2 = np.array(hsv2["UpperHSV"])
         canny = raw[str(CANNY)]
 
     # for trackbars
-    # [HSV, CANNY, HSV_YELLOW, HSV_WHITE]
+    # [HSV, CANNY, HSV_A, HSV_B]
     trackbarOn = [False, False, False, False]
     tb = Trackbars(lowerHSV, upperHSV)
     tb1 = Trackbars(l1, u1)
@@ -84,20 +84,20 @@ def startWebcam():
             cap.release()
             cv2.destroyAllWindows()
 
-        # quit with saving (yellow)
+        # quit with saving (A)
         elif (keyPressed & 0xFF) == ord('t'):
-            raw[str(HSV_YELLOW)]["LowerHSV"] = l1.tolist()
-            raw[str(HSV_YELLOW)]["UpperHSV"] = u1.tolist()
+            raw[str(HSV_A)]["LowerHSV"] = l1.tolist()
+            raw[str(HSV_A)]["UpperHSV"] = u1.tolist()
             with open('trackbarValues.json', 'w') as json_file:
                 json.dump(raw, json_file)
 
             cap.release()
             cv2.destroyAllWindows()
 
-        # quit with saving (white)
+        # quit with saving (B)
         elif (keyPressed & 0xFF) == ord('u'):
-            raw[str(HSV_WHITE)]["LowerHSV"] = l2.tolist()
-            raw[str(HSV_WHITE)]["UpperHSV"] = u2.tolist()
+            raw[str(HSV_B)]["LowerHSV"] = l2.tolist()
+            raw[str(HSV_B)]["UpperHSV"] = u2.tolist()
             with open('trackbarValues.json', 'w') as json_file:
                 json.dump(raw, json_file)
 
@@ -119,16 +119,16 @@ def startWebcam():
                 print('Close other trackbar first')
 
         # HSV trackbar (white)
-        elif (keyPressed & 0xFF) == ord('w'):
+        elif (keyPressed & 0xFF) == ord('z'):
             # turn on trackbar
             if not any(trackbarOn):
                 l_hsv = l2
                 u_hsv = u2
                 tb2.startTrackbars()
-                trackbarOn[HSV_WHITE] = True
-            elif trackbarOn[HSV_WHITE]:
+                trackbarOn[HSV_B] = True
+            elif trackbarOn[HSV_B]:
                 values = tb.closeTrackbars()
-                trackbarOn[HSV_WHITE] = False
+                trackbarOn[HSV_B] = False
             else:
                 print('Close other trackbar first')
 
@@ -139,10 +139,10 @@ def startWebcam():
                 l_hsv = l1
                 u_hsv = u1
                 tb1.startTrackbars()
-                trackbarOn[HSV_YELLOW] = True
-            elif trackbarOn[HSV_YELLOW]:
+                trackbarOn[HSV_A] = True
+            elif trackbarOn[HSV_A]:
                 values = tb.closeTrackbars()
-                trackbarOn[HSV_YELLOW] = False
+                trackbarOn[HSV_A] = False
             else:
                 print('Close other trackbar first')
 
@@ -159,7 +159,7 @@ def startWebcam():
         # =======================
 
         # Necessary operations when respective trackbar is on
-        if trackbarOn[HSV] or trackbarOn[HSV_WHITE] or trackbarOn[HSV_YELLOW]:
+        if trackbarOn[HSV] or trackbarOn[HSV_B] or trackbarOn[HSV_A]:
             cv2.namedWindow('Mask')
             cv2.imshow("Mask", mask)
         if trackbarOn[CANNY]:
