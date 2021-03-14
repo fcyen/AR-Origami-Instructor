@@ -2,7 +2,7 @@ import cv2
 import math
 
 import draw
-from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance
+from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calculatedSquaredDistance, identifyTriangle
 
 
 convertToIntPoint = draw.convertToIntPoint
@@ -109,13 +109,17 @@ class Step:
 
     def checkShape(self, img, img_masked):
         if "checkShapeOverride" in self.kwargs:
-            if self.id == 3:
-                shape = self.kwargs['checkShapeOverride'](
-                    img_masked, img, DEBUG)
-            elif DEBUG:
-                shape = self.kwargs['checkShapeOverride'](img_masked, img)
+            if DEBUG:
+                shape = self.kwargs['checkShapeOverride'](img_masked, self.id, img)
             else:
-                shape = self.kwargs['checkShapeOverride'](img_masked)
+                shape = self.kwargs['checkShapeOverride'](img_masked, self.id)
+            # if self.id == 3:
+            #     shape = self.kwargs['checkShapeOverride'](
+            #         img_masked, img, DEBUG)
+            # elif DEBUG:
+            #     shape = self.kwargs['checkShapeOverride'](img_masked, img)
+            # else:
+            #     shape = self.kwargs['checkShapeOverride'](img_masked)
 
             if len(shape) > 0:
                 shape_match = True
@@ -181,61 +185,14 @@ class Step:
 
         return False
 
-    # def showNextStep(self, dimg, bimg):
-    #     ''' Displays instruction graphics, returns True after a period of time to move on to next step '''
-    #     if self.match_count < 500:
-    #         if "checkShapeOverride" in self.kwargs:
-    #             cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
-    #         else:
-    #             cnt_feed = self.detectContour(bimg)
-
-    #         # make sure the number of vertices is correct
-    #         if self.id == 4:
-    #             draw.putInstruction(dimg, self.instruction[0])
-    #             self.other_count += 1
-    #             if self.other_count > 6:
-    #                 self.other_count = 0
-    #             self.draw(dimg, cnt_feed, self.other_count/10)
-
-    #         elif len(cnt_feed) == self.vertices_count:
-    #             cv2.drawContours(dimg, [cnt_feed], 0, draw.BLUE, 3)
-    #             self.draw(dimg, cnt_feed, [])
-    #             self.match_count += 1
-
-    #             # instructions
-    #             x = 0
-    #             for instr in self.instruction:
-    #                 draw.putInstruction(
-    #                     dimg, self.instruction[x], position=(60, 60+(30*x)))
-    #                 x += 1
-
-    #         else:
-    #             if DEBUG:
-    #                 print('Wrong number of vertices! Expected {} got {}'.format(
-    #                     self.vertices_count, len(cnt_feed)))
-    #             self.other_count += 1
-
-    #             # if contour no longer matches, either
-    #             # - break if instruction has been shown for sufficient duration
-    #             # - reset count to zero so that instruction will be shown when contour matches again
-    #             if self.other_count > 50:
-    #                 if self.match_count > 80:
-    #                     return True
-    #                 else:
-    #                     self.match_count = 0
-
-    #         return False
-
-    #     else:   # finish displaying instructions
-    #         return True
-
 
 # ~~~~~~~~~~~~~~~~~ Step 0 ~~~~~~~~~~~~~~~~~~
 step0 = Step(0, '', None, '', 0)
+def dummyFn(a, b): 
+    return False
+step0.showNextStep = dummyFn
 
 # ~~~~~~~~~~~~~~~~~ Step 1 ~~~~~~~~~~~~~~~~~~~
-
-
 def draw1(img, ref_cnt, bounding_rect):
     pt1 = tuple(ref_cnt[0])
     pt2 = tuple(ref_cnt[1])
@@ -292,7 +249,7 @@ def draw2a(img, ref_cnt, bounding_rect):
 instruction2a = ["Fold the top layer along the",
                  "blue line"]
 step2a = Step(2, 'assets/step2.png', draw2a, instruction2a,
-              checkShapeOverride=findTriangle)
+              checkShapeOverride=identifyTriangle)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
@@ -343,7 +300,7 @@ def draw3a(img, ref_cnt, bounding_rect):
 
 instruction3a = ["Fold along the blue line"]
 step3a = Step(3, '', draw3a, instruction3a,
-              vertices_count=3, checkShapeOverride=findTriangleWithFold, approx_val=0.02)
+              vertices_count=3, checkShapeOverride=identifyTriangle, approx_val=0.02)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 4 ~~~~~~~~~~~~~~~~~~~

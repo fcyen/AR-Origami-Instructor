@@ -14,7 +14,6 @@ def main():
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
         cap = cv2.VideoCapture(0, 1200)
-    # cap = cv2.VideoCapture('videos/full_sample.mov')  # use sample video
 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -26,9 +25,6 @@ def main():
     nextStep = steps[num+1]
     count = 0
 
-    def dummyFn(a, b):  # for the first step
-        return False
-    curStep.showNextStep = dummyFn
 
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
@@ -36,7 +32,7 @@ def main():
         hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        hsv_skin = raw[str(2)]  # green colour
+        hsv_skin = raw[str(2)]  # skin colour
         lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
         upperHSV_skin = np.array(hsv_skin["UpperHSV"])
 
@@ -46,60 +42,41 @@ def main():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
-        img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
 
-        if state == 0:
-            if num == 0:
-                text1 = 'Place paper on the table'
-                text2 = '(white colour side facing up)'
-                draw.putInstruction(img, text1)
-                draw.putInstruction(img, text2, position=(60, 90))
+        if detectHands(img_hsv, lowerHSV_skin, upperHSV_skin):
+            # text = 'Hands detected!'
+            text = ''
+            draw.putInstruction(img, text)
 
-            if curStep.showNextStep(img, img_masked):  # return True if shape matches
-                print('cur')
-                if num == 3 or num == 2:
-                    count += 1
+        else:
+            if state == 0:
+                if num == 0:
+                    text1 = 'Place paper on the table'
+                    text2 = '(white colour side facing up)'
+                    draw.putInstruction(img, text1)
+                    draw.putInstruction(img, text2, position=(60, 90))
 
-            # return True if shape if confirmed to be correct
-            elif nextStep.checkShape(img, img_masked):
-                print('next')
-                if num == len(steps)-2:   # last step
-                    print("Well done!")
-                    state = 1
-                    nextStep.showNextStep(img, img_masked)
-                    # time.sleep(2)
-                    # cap.release()
-                    # cv2.destroyAllWindows()
-                    # break
+                if curStep.showNextStep(img, img_masked):  # return True if shape matches
+                    print('cur')
+                    # if num == 3 or num == 2:
+                    #     count += 1
 
-                else:
-                    num += 1
-                    count = 0
-                    curStep = steps[num]
-                    nextStep = steps[num+1]
+                # return True if shape if confirmed to be correct
+                elif nextStep.checkShape(img, img_masked):
+                    print('next')
+                    # count = 0
+                    if num == len(steps)-2:   # last step
+                        print("Well done!")
+                        state = 1
 
-        #     if step.checkShape(img_masked, img):
-        #         num += 1
+                    else:
+                        num += 1
+                        curStep = steps[num]
+                        nextStep = steps[num+1]
 
-        #         else:
-        #             curStep = steps[num]
-        #             nextStep = steps[num+1]
-        #         state = 1
 
-        elif state == 1:
-            nextStep.showNextStep(img, img_masked)
-        #     hand_detected = img_skin.sum() > 10000000
-        #     if step.showNextStep(img, img_masked) or hand_detected:
-        #         state = 0
-        #         if num == len(steps):
-        #             print("Well done!")
-        #             step.showNextStep(img, img_masked)
-        #             time.sleep(2)
-        #             cap.release()
-        #             cv2.destroyAllWindows()
-        #             break
-        #         else:
-        #             step = steps[num]
+            elif state == 1:    # end screen
+                nextStep.showNextStep(img, img_masked)
 
         print("State: {}, step {}".format(state, curStep.id))
 
@@ -117,9 +94,19 @@ def main():
                 num += 1
                 curStep = steps[num]
                 nextStep = steps[num+1]
+                count = 0
             elif num == (len(steps)-2):
-                num
                 curStep = steps[0]
+
+
+def detectHands(img_hsv, l_hsv, u_hsv):
+    mask = cv2.inRange(img_hsv, l_hsv, u_hsv)
+    h, w = mask.shape
+    cropped = mask[h-50:h, 0:w]
+    if cropped.sum() > 1000000:
+        return True
+    else:
+        return False
 
 
 main()

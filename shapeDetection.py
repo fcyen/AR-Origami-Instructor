@@ -33,8 +33,8 @@ def detectShape(mask, dimg=[], minArea=1000):
     kernel = np.ones((5, 5), np.uint8)
     cv2.erode(mask, kernel)
 
-    contours, _ = cv2.findContours(
-        mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > minArea:  # remove noise
@@ -43,13 +43,11 @@ def detectShape(mask, dimg=[], minArea=1000):
 
             if len(dimg) > 0:
                 cv2.drawContours(dimg, [approx], 0, draw.DEBUG_GREEN, 2)
-                #cv2.putText(dimg, str(len(approx)), tuple(cnt[0][0]), cv2.FONT_HERSHEY_SIMPLEX, 1, draw.DEBUG_GREEN)
 
-    return result
+    return result, _
+
 
 # currently unused
-
-
 def detectLines(img, t1, t2, dimg):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.GaussianBlur(img, (3, 3), 0, imgGray)
@@ -73,9 +71,9 @@ def detectLines(img, t1, t2, dimg):
         pass
 
 
-def findSquare(mask, dimg=[]):
+def findSquare(mask, step_num, dimg=[]):
     ''' Finds square in image and draws an outline (debug), returns the reshaped square contour '''
-    contours = detectShape(mask, dimg)
+    contours, _ = detectShape(mask, dimg)
 
     for cnt in contours:
         if len(cnt) == 4:
@@ -98,7 +96,7 @@ def findSquare(mask, dimg=[]):
 
 def findTriangle(mask, dimg=[]):
     ''' Finds triangle in image and draws an outline (debug), returns the reshaped triangle contour '''
-    contours = detectShape(mask, dimg)
+    contours, _ = detectShape(mask, dimg)
     for cnt in contours:
         if len(cnt) == 3:
             shape = cnt.reshape(3, 2)
@@ -119,14 +117,10 @@ def findTriangle(mask, dimg=[]):
 
 def findTriangleWithFold(mask, dimg=[], debug=False):
     ''' Finds triangle in image and draw an outline (debug), returns the triangle contour, with the top vertex at index 0 '''
-    # img_green = cv2.inRange(dimg, lowerHSV_green, upperHSV_green)
-
     if debug:
-        contours = detectShape(mask, dimg)
-        # contours_green = detectShape(img_green, dimg)
+        contours, _ = detectShape(mask, dimg)
     else:
-        contours = detectShape(mask)
-        # contours_green = detectShape(img_green)
+        contours, _ = detectShape(mask)
 
     for cnt in contours:
         if len(cnt) == 5:   # paper is slightly open
@@ -153,12 +147,6 @@ def findTriangleWithFold(mask, dimg=[], debug=False):
                 print('hull points: {}'.format(len(hull)))
 
         elif len(cnt) == 3:
-            #     correct = False
-            #     for cnt_g in contours_green:
-            #         if len(cnt_g) == 3:
-            #             correct = True
-            #             break
-            #     if correct:
             a, b, c = cnt
             l1 = calculatedSquaredDistance(a[0], b[0])
             l2 = calculatedSquaredDistance(b[0], c[0])
@@ -176,6 +164,93 @@ def findTriangleWithFold(mask, dimg=[], debug=False):
             v3 = abs(l3 - (l2+l1)) < (0.2*l3)
             if v3:  # ac is the long edge
                 return np.array([b, a, c])
+
+    return []
+
+
+def identifyTriangle(mask, dimg=[], debug=False, step_num=3):
+    ''' Finds triangle in image and draw an outline (debug), returns the triangle contour, with the top vertex at index 0 '''
+    if debug:
+        contours, hierarchy = detectShape(mask, dimg, minArea=0)
+    else:
+        contours, hierarchy = detectShape(mask, minArea=0)
+
+    max_area = 0
+    max_cnt = []
+    max_i = 0
+
+    for i in range(len(contours)):
+        # find contour with the largest area
+        cnt = contours[i]
+        area = cv2.contourArea(cnt)
+        if area > max_area:
+            max_i = i
+            max_area = area
+    max_cnt = contours[i]
+
+    if len(max_cnt) == 5:   # paper is slightly open
+        if step_num == 2:
+            return []
+        elif step_num == 3:
+            hull = cv2.convexHull(max_cnt, returnPoints=False)
+            defects = cv2.convexityDefects(max_cnt, hull)   # [ start point, end point, farthest point, approximate distance to farthest point ]
+
+            if defects is not None and len(defects) == 1 and defects[0][3] < 100:
+                # correct shape
+                # >> see distance
+                # >> see if start point > end point or vice versa
+                print(defects[0][3])
+
+                # assuming end point is larger
+                x = defects[0][1]
+                a = max_cnt[(x+1) % 5]  # next to x
+                b = max_cnt[(x+2) % 5]
+                c = max_cnt[(x+3) % 5]
+                d = max_cnt[(x+4) % 5]  # next to x
+                l1 = calculatedSquaredDistance(a[0], c[0])
+                l2 = calculatedSquaredDistance(b[0], d[0])
+
+                if l1 > l2:  # ac are bases
+                    shape = np.array([b, c, a])
+                else:       # bd are bases
+                    shape = np.array([c, b, d])
+
+
+    elif len(max_cnt) == 3:
+        # check if there are two child contours
+        # hierarchy = [next, previous, first child, parent]
+        child_index = hierarchy[max_i][2]
+        if child_index > 0:
+            # >> use if necessary
+            # num_of_children = 0
+            # while child_index > 0:
+            #     child_cnt = contours[child_index]
+            #     child_area = cv2.contourArea(child_cnt)
+            #     if child_area > 100 and child_area < 700: 
+            #         num_of_children += 1
+
+            #     child_index = hierarchy[child_index][0] # fetch next child
+
+            if step_num == 2:
+                return []
+                
+        a, b, c = max_cnt
+        l1 = calculatedSquaredDistance(a[0], b[0])
+        l2 = calculatedSquaredDistance(b[0], c[0])
+        l3 = calculatedSquaredDistance(c[0], a[0])
+
+        # check if a2 + b2 = c2
+        v1 = abs(l1 - (l2+l3)) < (0.2*l1)
+        if v1:  # ab is the long edge
+            return np.array([c, a, b])
+
+        v2 = abs(l2 - (l1+l3)) < (0.2*l2)
+        if v2:  # bc is the long edge
+            return np.array([a, b, c])
+
+        v3 = abs(l3 - (l2+l1)) < (0.2*l3)
+        if v3:  # ac is the long edge
+            return np.array([b, a, c])
 
     return []
 

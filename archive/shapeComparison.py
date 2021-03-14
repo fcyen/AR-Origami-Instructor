@@ -41,17 +41,20 @@ def detectContour(img, disp_img=[], offset=(0, 0)):
     # img = cv2.GaussianBlur(img, (3, 3), 1)
     contours, _ = cv2.findContours(
         img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    result = []
+    result = [[]]
+    max_area = 0
 
     for i in range(len(contours)):
         cnt = contours[i]
         area = cv2.contourArea(cnt)
         # print(area)
-        if area > 20000:
+        if area > max_area:
+            max_area = area
             peri = cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, 0.01*peri, True)
             l = len(approx)
-            result.append(approx.reshape(l, 2))
+            result[0] = approx.reshape(l ,2)
+            # result.append(approx.reshape(l, 2))
 
             if len(disp_img) > 0:
                 cv2.drawContours(disp_img, [approx],

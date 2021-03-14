@@ -8,7 +8,7 @@ import shapeDetection as shape
 import draw
 import time
 from sys import platform
-from shapeDetection import detectShape, findTriangleWithFold, calculatedSquaredDistance
+from shapeDetection import detectShape, findTriangle, findTriangleWithFold, calculatedSquaredDistance
 from archive.shapeComparison import detectContour
 
 
@@ -192,10 +192,23 @@ def startWebcam():
             break
 
         elif state == 2:    # misc testing
-            detectContour(mask, img_copy)
+            # findTriangle(mask, img_copy)
+            findTriangleWithFold(mask, img_copy)
+            # h, w, _ = imgHSV.shape
+            # img_bottom = mask[h-50:h, 0:w]
+            # print(img_bottom.sum())
+            # cnt = detectContour(mask)
+            # mask2 = cv2.inRange(imgHSV, l2, u2)
+            # cnt2 = detectContour(mask2)
+            # if len(cnt2) > 0 and len(cnt) > 0:
+            #     area = cv2.contourArea(cnt)
+            #     area2 = cv2.contourArea(cnt2)
+            #     cv2.drawContours(img_copy, [cnt], 0, (255,255,0), 3)
+            #     print("{} \t {}".format(area, area2))
 
         cv2.namedWindow('Result')
         cv2.imshow("Result", img_copy)
+        # cv2.imshow("Cropped", img_bottom)
 
 
 state = 0
