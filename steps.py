@@ -8,7 +8,7 @@ from shapeMatch import identifyCurrentStep
 convertToIntPoint = draw.convertToIntPoint
 
 steps = []  # array of Step instances
-DEBUG = True
+DEBUG = False
 
 class Step:
     def __init__(self, id, draw_fn, instruction, **kwargs):
@@ -25,13 +25,8 @@ class Step:
         self.match_count = 0
 
     def checkShape(self, img, img_masked, accent_masked, debug=DEBUG):
-        if debug:
-            print('Check shape: {}'.format(self.id))
-            time.sleep(0.5)
-            shape_match = True
-        else:
-            step, shape = identifyCurrentStep(img, img_masked, accent_masked, debug)
-            shape_match = step == self.id
+        step, shape = identifyCurrentStep(img, img_masked, accent_masked, debug)
+        shape_match = step == self.id
 
         # return True after 10 consecutive matches
         if shape_match and self.match_count > 20:
@@ -45,15 +40,10 @@ class Step:
             return False
 
 
-    def showNextStep(self, img, img_masked, accent_masked, debug=DEBUG):
+    def showNextStep(self, dimg, img_masked, accent_masked, debug=DEBUG):
         ''' Displays instruction graphics, returns True if shape still matches '''
-        step, cnt = identifyCurrentStep(img, img_masked, accent_masked, debug)
+        step, cnt = identifyCurrentStep(dimg, img_masked, accent_masked, debug)
         shape_match = step == self.id
-
-        if shape_match:
-            return True
-        else:
-            return False
 
         if shape_match:
             if self.id == 4:
@@ -63,18 +53,18 @@ class Step:
                 if self.count > 6:
                     self.count = 0
 
-            self.draw(dimg, cnt, self.count/10)
+                self.draw(dimg, cnt, self.count/10)
 
-        else:
-            cv2.drawContours(dimg, [cnt], 0, draw.BLUE, draw.THICKNESS_S)
-            self.draw(dimg, cnt)
+            else:
+                cv2.drawContours(dimg, [cnt], 0, draw.BLUE, draw.THICKNESS_S)
+                self.draw(dimg, cnt)
 
-            # instructions
-            x = 0
-            for instr in self.instruction:
-                draw.putInstruction(
-                    dimg, self.instruction[x], position=(60, 60+(30*x)))
-                x += 1
+                # instructions
+                x = 0
+                for instr in self.instruction:
+                    draw.putInstruction(
+                        dimg, self.instruction[x], position=(60, 60+(30*x)))
+                    x += 1
             return True
 
         return False

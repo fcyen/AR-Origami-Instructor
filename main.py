@@ -7,6 +7,7 @@ import time
 
 from steps import steps, DEBUG
 import draw
+from shapeMatch import identifyCurrentStep
 
 
 def main():
@@ -55,7 +56,7 @@ def main():
         else:
             if state == 0:
                 if num == 0:
-                    text1 = 'Place paper on the table'
+                    text1 = 'Place paper on the table to start'
                     text2 = '(white colour side facing up)'
                     draw.putInstruction(img, text1)
                     draw.putInstruction(img, text2, position=(60, 90))
@@ -74,6 +75,10 @@ def main():
                         num += 1
                         prevStep = steps[num]
                         curStep = steps[num+1]
+                
+                elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
+                    draw.putInstruction(img, 'Wrong shape')
+                    draw.putInstruction(img, 'Please try again', position=(60, 90))
 
             # end screen, shows the wave animation
             elif state == 1: 

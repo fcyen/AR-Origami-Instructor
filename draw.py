@@ -94,7 +94,6 @@ def drawWave(dimg, pt_a, pt_b, time, color=LIGHTBLUE, thickness=THICKNESS_S):
     mid = ((xa+xb)/2, (ya+yb)/2)
     angle_rad = math.atan(abs(ya-yb)/abs(xa-xb))
     angle = math.degrees(angle_rad)
-    print(angle)
 
     for x in range(640):
         y = amp*math.sin(rad)

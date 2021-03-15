@@ -1,9 +1,12 @@
 import cv2
 import math
+import numpy as np
 
 import draw
 
-def detectContours(bimg, dimg, minArea=1000, approx_val=0.02, debug=False):
+green_contour_size = 10000
+
+def detectContours(bimg, dimg, minArea=1000, approx_val=0.01, debug=False):
     ''' Returns all approximated contours larger than minArea '''
     contours, _ = cv2.findContours(bimg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     results = []
@@ -64,11 +67,57 @@ def calculatedSquaredDistance(pt1, pt2):
     return (pt1[0]-pt2[0]) ** 2 + (pt1[1]-pt2[1]) ** 2
 
 
+def getAccentContour(img, accent_masked):
+    contours = detectContours(accent_masked, img)
+    cnt = getLargestContour(contours)
+    return cnt
+
+
+def differentiate2and3(img, accent_masked):
+    cnt = getAccentContour(img, accent_masked)
+    if len(cnt) > 0:
+        area = cv2.contourArea(cnt)
+        if area < green_contour_size and area > 1000:
+            return 3
+        else:
+            return 2
+    else:
+        return 2
+
+
+def getStep3Triangle(img, accent_masked, shape, top, bases):
+    accent = getAccentContour(img, accent_masked)
+    M = cv2.moments(accent)
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+    centroid = (cX, cY)
+
+    # find closest vertex
+    closest = shape[0] # base2
+    min_dist = 1000000
+    for point in shape:
+        dist = calculatedSquaredDistance(point, centroid)
+        if dist < min_dist:
+            min_dist = dist
+            closest = point
+
+    if closest[0] != bases[0][0]:
+        return [[top], [bases[0]], [closest]]
+    else:
+        return [[top], [bases[1], [closest]]]
+
+
+    
+
+########################################################################
+
 refcnt_4 = loadReferenceContour('assets/step4a.png')
 
 def identifyCurrentStep(img, img_masked, accent_masked, debug=False):
     ''' Returns:
             - step: [int] current step
+                - -1 if no step matches
+                - -2 if undecided
             - cnt: [array] original contour         
     '''
     contours = detectContours(img_masked, img, debug)
@@ -110,7 +159,21 @@ def identifyCurrentStep(img, img_masked, accent_masked, debug=False):
         v2 = abs(l2 - (l1+l3)) < (0.2*l2)
         v3 = abs(l3 - (l2+l1)) < (0.2*l3)
         if v1 or v2 or v3:
-            return 2, cnt
+            dif = differentiate2and3(img, accent_masked)
+
+            if dif == 3:
+                if v1:
+                    top = c
+                    bases = [a,b]
+                elif v2:
+                    top = a
+                    bases = [b,c]
+                else:
+                    top = b
+                    bases = [c,a]
+                cnt = getStep3Triangle(img, accent_masked, shape, top, bases)
+            return dif, cnt
+
         elif debug:
             print('l1: {}, l2: {}, l3: {}'.format(l1, l2, l3))
 
@@ -121,10 +184,29 @@ def identifyCurrentStep(img, img_masked, accent_masked, debug=False):
         shape = cnt.reshape(5, 2)
         hull = cv2.convexHull(cnt, returnPoints=False)
         if len(hull) == 4:
-            return 3, cnt
+            dif = differentiate2and3(img, accent_masked)
+            if dif == 3:
+                x = 10 - hull.sum()  # find out concave vertex index
+                a = cnt[(x+1) % 5]  # next to x
+                b = cnt[(x+2) % 5]
+                c = cnt[(x+3) % 5]
+                d = cnt[(x+4) % 5]  # next to x
+                l1 = calculatedSquaredDistance(a[0], c[0])
+                l2 = calculatedSquaredDistance(b[0], d[0])
+
+                if l1 > l2:  # ac are bases
+                    triangle = np.array([b, c, a])
+                else:       # bd are bases
+                    triangle = np.array([c, b, d])
+                return dif, triangle
+
+            return dif, cnt
+
 
     # ---------------
     else:
+        if debug:
+            print('{} vertices'.format(l))
         isStep4 = compareShapes(refcnt_4, cnt)
         if isStep4:
             shape = cnt.reshape(l, 2)
