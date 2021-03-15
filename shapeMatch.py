@@ -15,7 +15,7 @@ def detectContours(bimg, dimg, minArea=1000, approx_val=0.02, debug=False):
         if area > minArea:
             peri = cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, approx_val*peri, True)
-            result.append(approx)
+            results.append(approx)
             if debug:
                 cv2.drawContours(dimg, [approx], 0, draw.DEBUG_GREEN, draw.THICKNESS_S)
 
@@ -45,19 +45,23 @@ def loadReferenceContour(path):
     return cnt
 
 
- def compareShapes(cnt1, cnt2, threshold=0.9, debug=False):
-        ''' Returns True if both contours are similar '''
-        d = -1
-        if len(cnt1) > 0 and len(cnt2) > 0:
-            d = cv2.matchShapes(cnt1, cnt2, cv2.CONTOURS_MATCH_I2, 0)
+def compareShapes(cnt1, cnt2, threshold=0.9, debug=False):
+    ''' Returns True if both contours are similar '''
+    d = -1
+    if len(cnt1) > 0 and len(cnt2) > 0:
+        d = cv2.matchShapes(cnt1, cnt2, cv2.CONTOURS_MATCH_I2, 0)
 
-        if debug:
-            print('d = ' + str(d))
+    if debug:
+        print('d = ' + str(d))
 
-        if d < threshold and d >= 0:
-            return True
-        else:
-            return False
+    if d < threshold and d >= 0:
+        return True
+    else:
+        return False
+
+
+def calculatedSquaredDistance(pt1, pt2):
+    return (pt1[0]-pt2[0]) ** 2 + (pt1[1]-pt2[1]) ** 2
 
 
 refcnt_4 = loadReferenceContour('assets/step4a.png')
@@ -128,3 +132,5 @@ def identifyCurrentStep(img, img_masked, accent_masked, debug=False):
         
         # no step matches
         return -1, []
+
+    return -1, []

@@ -5,7 +5,7 @@ import numpy as np
 from sys import platform
 import time
 
-from allSteps import steps, DEBUG
+from steps import steps, DEBUG
 import draw
 
 
@@ -77,7 +77,7 @@ def main():
 
             # end screen, shows the wave animation
             elif state == 1: 
-                curStep.showNextStep(img, img_masked)
+                curStep.showNextStep(img, img_masked, accent_masked)
 
         cv2.imshow('AR Instructor', img)
 

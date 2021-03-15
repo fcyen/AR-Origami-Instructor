@@ -1,5 +1,6 @@
 import cv2
 import math
+import time
 
 import draw
 from shapeMatch import identifyCurrentStep
@@ -21,16 +22,20 @@ class Step:
         self.instruction = instruction
         self.kwargs = kwargs
         self.count = 0
+        self.match_count = 0
 
-
-    def checkShape(self, img, img_masked, accent_masked, debug=False):
-        step, shape = identifyCurrentStep(img, img_masked, accent_masked, debug)
-        shape_match = step == self.id
+    def checkShape(self, img, img_masked, accent_masked, debug=DEBUG):
+        if debug:
+            print('Check shape: {}'.format(self.id))
+            time.sleep(0.5)
+            shape_match = True
+        else:
+            step, shape = identifyCurrentStep(img, img_masked, accent_masked, debug)
+            shape_match = step == self.id
 
         # return True after 10 consecutive matches
         if shape_match and self.match_count > 20:
             self.match_count = 0
-            self.other_count = 0
             return True
 
         elif shape_match:
@@ -40,7 +45,7 @@ class Step:
             return False
 
 
-    def showNextStep(self, img, img_masked, accent_masked, debug=False):
+    def showNextStep(self, img, img_masked, accent_masked, debug=DEBUG):
         ''' Displays instruction graphics, returns True if shape still matches '''
         step, cnt = identifyCurrentStep(img, img_masked, accent_masked, debug)
         shape_match = step == self.id
@@ -76,8 +81,8 @@ class Step:
  
 
  # ~~~~~~~~~~~~~~~~~ Step 0 ~~~~~~~~~~~~~~~~~~
-step0 = Step(0, dummyFn, '', None)
-def dummyFn(**kwargs): 
+step0 = Step(0, None, '')
+def dummyFn(self, x,y): 
     return False
 step0.showNextStep = dummyFn
 
@@ -137,7 +142,7 @@ def draw2(img, ref_cnt):
 
 instruction2 = ["Fold the top layer along the",
                  "blue line"]
-step2 = Step(2, draw2a, instruction2)
+step2 = Step(2, draw2, instruction2)
 
 
 # ~~~~~~~~~~~~~~~~~ Step 3a ~~~~~~~~~~~~~~~~~~~
