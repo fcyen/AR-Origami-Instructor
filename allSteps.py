@@ -8,7 +8,7 @@ from shapeDetection import findSquare, findTriangle, findTriangleWithFold, calcu
 convertToIntPoint = draw.convertToIntPoint
 
 steps = []  # array of Step instances
-DEBUG = False
+DEBUG = True
 D_ER = 1.2
 
 
@@ -109,10 +109,7 @@ class Step:
 
     def checkShape(self, img, img_masked):
         if "checkShapeOverride" in self.kwargs:
-            if DEBUG:
-                shape = self.kwargs['checkShapeOverride'](img_masked, self.id, img)
-            else:
-                shape = self.kwargs['checkShapeOverride'](img_masked, self.id)
+            shape = self.kwargs['checkShapeOverride'](img_masked, self.id, img, DEBUG)
             # if self.id == 3:
             #     shape = self.kwargs['checkShapeOverride'](
             #         img_masked, img, DEBUG)
@@ -149,9 +146,9 @@ class Step:
     def showNextStep(self, dimg, bimg):
         ''' Displays instruction graphics, returns True if shape still matches '''
         if "checkShapeOverride" in self.kwargs:
-            cnt_feed = self.kwargs['checkShapeOverride'](bimg, dimg)
+            cnt_feed = self.kwargs['checkShapeOverride'](bimg, self.id, dimg)
         else:
-            cnt_feed = self.detectContour(bimg)
+            cnt_feed = self.detectContour(bimg, self.id)
 
         # make sure the number of vertices is correct
         if self.id == 4:

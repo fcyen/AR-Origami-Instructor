@@ -21,8 +21,8 @@ def main():
 
     state = 0
     num = 0
-    curStep = steps[num]
-    nextStep = steps[num+1]
+    prevStep = steps[num]
+    curStep = steps[num+1]
     count = 0
 
 
@@ -32,9 +32,12 @@ def main():
         hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        hsv_skin = raw[str(2)]  # skin colour
+        hsv_skin = raw[str(2)]   # skin colour
         lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
         upperHSV_skin = np.array(hsv_skin["UpperHSV"])
+        hsv_accent = raw[str(3)]  # green colour
+        lowerHSV_accent = np.array(hsv_accent["LowerHSV"])
+        upperHSV_accent = np.array(hsv_accent["UpperHSV"])
 
     # -------------------- main loop ------------------------
 
@@ -42,6 +45,7 @@ def main():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
+        accent_masked = cv2.inRange(img_hsv, lowerHSV_accent, upperHSV_accent)
 
         if detectHands(img_hsv, lowerHSV_skin, upperHSV_skin):
             # text = 'Hands detected!'
@@ -56,31 +60,26 @@ def main():
                     draw.putInstruction(img, text1)
                     draw.putInstruction(img, text2, position=(60, 90))
 
-                if curStep.showNextStep(img, img_masked):  # return True if shape matches
-                    print('cur')
-                    # if num == 3 or num == 2:
-                    #     count += 1
+                if prevStep.showNextStep(img, img_masked, accent_masked):  # return True if shape matches
+                    print('showing instructions for step {}'.format(prevStep.id))
 
-                # return True if shape if confirmed to be correct
-                elif nextStep.checkShape(img, img_masked):
-                    print('next')
-                    # count = 0
-                    if num == len(steps)-2:   # last step
+                elif curStep.checkShape(img, img_masked, accent_masked):   # return True if shape if confirmed to be correct
+                    print('moving to the next step')
+
+                    if num == len(steps)-2:   # last step, proceed to end screen 
                         print("Well done!")
                         state = 1
 
                     else:
                         num += 1
-                        curStep = steps[num]
-                        nextStep = steps[num+1]
+                        prevStep = steps[num]
+                        curStep = steps[num+1]
 
+            # end screen, shows the wave animation
+            elif state == 1: 
+                curStep.showNextStep(img, img_masked)
 
-            elif state == 1:    # end screen
-                nextStep.showNextStep(img, img_masked)
-
-        print("State: {}, step {}".format(state, curStep.id))
-
-        cv2.imshow('Webcam', img)
+        cv2.imshow('AR Instructor', img)
 
         keyPressed = cv2.waitKey(1)
         if (keyPressed & 0xFF) == ord('q'):
@@ -89,14 +88,22 @@ def main():
             break
 
         # force proceed to next step
-        elif (keyPressed & 0xFF) == ord('n') or (count > 300):
+        elif (keyPressed & 0xFF) == ord('n'):
             if num < (len(steps)-2):
                 num += 1
-                curStep = steps[num]
-                nextStep = steps[num+1]
-                count = 0
+                prevStep = steps[num]
+                curStep = steps[num+1]
+
+            # stop checking previous step
             elif num == (len(steps)-2):
-                curStep = steps[0]
+                prevStep = steps[0]
+        
+        # force retreat to previous step
+        elif (keyPressed & 0xFF) == ord('p'):
+            if num > 0:
+                num -= 1
+                prevStep = steps[num]
+                curStep = steps[num+1]
 
 
 def detectHands(img_hsv, l_hsv, u_hsv):
