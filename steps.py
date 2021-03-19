@@ -95,39 +95,40 @@ step1 = Step(1, draw1, instruction1)
 # ~~~~~~~~~~~~~~~~~ Step 2a ~~~~~~~~~~~~~~~~~~~
 def draw2(img, ref_cnt):
     # find distance between each vertex
-    cnt = ref_cnt.reshape(3, 2)
-    (ax, ay), (bx, by), (cx, cy) = cnt
-    ab = (ax-bx)**2 + (ay-by)**2
-    bc = (bx-cx)**2 + (by-cy)**2
-    ac = (ax-cx)**2 + (ay-cy)**2
+    if (len(ref_cnt)) == 3:
+        cnt = ref_cnt.reshape(3, 2)
+        (ax, ay), (bx, by), (cx, cy) = cnt
+        ab = (ax-bx)**2 + (ay-by)**2
+        bc = (bx-cx)**2 + (by-cy)**2
+        ac = (ax-cx)**2 + (ay-cy)**2
 
-    long_edge = max(ab, bc, ac)
-    if ab == long_edge:
-        base1 = (ax, ay)
-        base2 = (bx, by)
-        top = (cx, cy)
-    elif bc == long_edge:
-        base1 = (bx, by)
-        base2 = (cx, cy)
-        top = (ax, ay)
-    else:  # ac
-        base1 = (ax, ay)
-        base2 = (cx, cy)
-        top = (bx, by)
+        long_edge = max(ab, bc, ac)
+        if ab == long_edge:
+            base1 = (ax, ay)
+            base2 = (bx, by)
+            top = (cx, cy)
+        elif bc == long_edge:
+            base1 = (bx, by)
+            base2 = (cx, cy)
+            top = (ax, ay)
+        else:  # ac
+            base1 = (ax, ay)
+            base2 = (cx, cy)
+            top = (bx, by)
 
-    # draw line
-    line_start = base1
-    r = 0.3827
-    line_end = (r*base2[0] + (1-r)*top[0], r*base2[1] + (1-r)*top[1])
-    line_end = convertToIntPoint(line_end)
-    cv2.line(img, line_start, line_end, draw.LIGHTBLUE, draw.THICKNESS_M)
+        # draw line
+        line_start = base1
+        r = 0.3827
+        line_end = (r*base2[0] + (1-r)*top[0], r*base2[1] + (1-r)*top[1])
+        line_end = convertToIntPoint(line_end)
+        cv2.line(img, line_start, line_end, draw.LIGHTBLUE, draw.THICKNESS_M)
 
-    # draw curved arrow
-    arrow_a = top
-    arrow_b = ((base2[0]+top[0])/2, (base2[1]+top[1])/2)
-    arrow_c = ((base2[0]+base1[0])/2, (base2[1]+base1[1])/2)
-    arrow_d = ((base1[0]+top[0])/2, (base1[1]+top[1])/2)
-    draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
+        # draw curved arrow
+        arrow_a = top
+        arrow_b = ((base2[0]+top[0])/2, (base2[1]+top[1])/2)
+        arrow_c = ((base2[0]+base1[0])/2, (base2[1]+base1[1])/2)
+        arrow_d = ((base1[0]+top[0])/2, (base1[1]+top[1])/2)
+        draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
 
 instruction2 = ["Fold the top layer along the",
@@ -168,8 +169,8 @@ def draw3(img, ref_cnt):
     # -- draw curved arrow
     # compute the center of the contour
     M = cv2.moments(ref_cnt)
-    cX = int(M["m10"] / M["m00"])
-    cY = int(M["m01"] / M["m00"])
+    cX = int(M["m10"] / M["m00"]+0.0001)
+    cY = int(M["m01"] / M["m00"]+0.0001)
     center = (cX, cY)
     arrow_a = draw.rotate(base2, center, -20)
     arrow_b = draw.rotate(top, center, -20)

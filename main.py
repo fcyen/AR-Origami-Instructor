@@ -62,7 +62,8 @@ def main():
                     draw.putInstruction(img, text2, position=(60, 90))
 
                 if prevStep.showNextStep(img, img_masked, accent_masked):  # return True if shape matches
-                    print('showing instructions for step {}'.format(prevStep.id))
+                    if DEBUG:
+                        print('showing instructions for step {}'.format(prevStep.id))
 
                 elif curStep.checkShape(img, img_masked, accent_masked):   # return True if shape if confirmed to be correct
                     print('moving to the next step')
@@ -76,9 +77,9 @@ def main():
                         prevStep = steps[num]
                         curStep = steps[num+1]
                 
-                elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
-                    draw.putInstruction(img, 'Wrong shape')
-                    draw.putInstruction(img, 'Please try again', position=(60, 90))
+                # elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
+                #     draw.putInstruction(img, 'Wrong shape')
+                #     draw.putInstruction(img, 'Please try again', position=(60, 90))
 
             # end screen, shows the wave animation
             elif state == 1: 
@@ -115,7 +116,7 @@ def detectHands(img_hsv, l_hsv, u_hsv):
     mask = cv2.inRange(img_hsv, l_hsv, u_hsv)
     h, w = mask.shape
     cropped = mask[h-50:h, 0:w]
-    if cropped.sum() > 1000000:
+    if cropped.sum() > 500000:
         return True
     else:
         return False

@@ -102,9 +102,9 @@ def getStep3Triangle(img, accent_masked, shape, top, bases):
             closest = point
 
     if closest[0] != bases[0][0]:
-        return [[top], [bases[0]], [closest]]
+        return np.array([[top], [bases[0]], [closest]])
     else:
-        return [[top], [bases[1], [closest]]]
+        return np.array([[top], [bases[1], [closest]]])
 
 
     
@@ -207,7 +207,7 @@ def identifyCurrentStep(img, img_masked, accent_masked, debug=False):
     else:
         if debug:
             print('{} vertices'.format(l))
-        isStep4 = compareShapes(refcnt_4, cnt)
+        isStep4 = compareShapes(refcnt_4, cnt, threshold=1.2)
         if isStep4:
             shape = cnt.reshape(l, 2)
             return 4, cnt
