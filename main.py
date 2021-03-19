@@ -95,13 +95,13 @@ def main():
 
         # force proceed to next step
         elif (keyPressed & 0xFF) == ord('n'):
-            if num < (len(steps)-2):
+            if num < 3:
                 num += 1
                 prevStep = steps[num]
                 curStep = steps[num+1]
 
             # stop checking previous step
-            elif num == (len(steps)-2):
+            elif num == 3:
                 prevStep = steps[0]
         
         # force retreat to previous step

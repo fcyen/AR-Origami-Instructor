@@ -167,18 +167,24 @@ def draw3(img, ref_cnt):
     cv2.line(img, line_start, line_end, draw.LIGHTBLUE, draw.THICKNESS_S)
 
     # -- draw curved arrow
-    # compute the center of the contour
-    M = cv2.moments(ref_cnt)
-    cX = int(M["m10"] / M["m00"]+0.0001)
-    cY = int(M["m01"] / M["m00"]+0.0001)
-    center = (cX, cY)
-    arrow_a = draw.rotate(base2, center, -20)
-    arrow_b = draw.rotate(top, center, -20)
-    arrow_c = draw.rotate(base1, center, -20)
     # find 4th vertex
-    arrow_dX = arrow_a[0] + arrow_c[0] - arrow_b[0]
-    arrow_dY = arrow_a[1] + arrow_c[1] - arrow_b[1]
-    arrow_d = (arrow_dX, arrow_dY)
+    dX = base2[0] + base1[0] - top[0]
+    dY = base2[1] + base1[1] - top[1]
+    d = (dX, dY)
+    # shift points out
+    shift = 0.4
+    arrow_a = (shift*top[0] + (1-shift)*base2[0],
+               shift*top[1] + (1-shift)*base2[1])
+    arrow_b = (shift*base1[0] + (1-shift)*dX, shift*base1[0] + (1-shift)*dY)
+    arrow_c = ((1+shift)*base1[0] - (shift)*dX,
+               (1+shift)*base1[1] - (shift)*dY)
+    arrow_d = ((1+shift)*top[0] - (shift)*base2[0],
+               (1+shift)*top[1] - (shift)*base2[1])
+    arrow_a = convertToIntPoint(arrow_a)
+    arrow_b = convertToIntPoint(arrow_b)
+    arrow_c = convertToIntPoint(arrow_c)
+    arrow_d = convertToIntPoint(arrow_d)
+
     draw.drawCurvedArrow(img, arrow_a, arrow_b, arrow_c, arrow_d)
 
 
