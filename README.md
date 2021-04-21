@@ -25,7 +25,8 @@ This AR Instructor teaches you origami step-by-step.
    ```
 
 
-#### HSV Calibration
+
+### HSV Calibration
 
 1. Run **hsvCalibration.py**
 
@@ -38,6 +39,7 @@ This AR Instructor teaches you origami step-by-step.
       *'x'*: Paper silhouette  
       *'y'*: Skin colour  
       *'z'*: Coloured side of paper
+      
 
 3. To quit and save a particular HSV range:  
       
