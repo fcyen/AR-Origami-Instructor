@@ -46,6 +46,7 @@ def main():
     er04 = cv2.imread('assets/endresults/er04.jpg', 1)
     er05 = cv2.imread('assets/endresults/er05.jpg', 1)
     endresults = [er01, er02, er03, er04, er05]
+    endresult = endresults[0]
 
     # -------------------- main loop ------------------------
 
