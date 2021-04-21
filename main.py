@@ -40,6 +40,15 @@ def main():
         lowerHSV_accent = np.array(hsv_accent["LowerHSV"])
         upperHSV_accent = np.array(hsv_accent["UpperHSV"])
 
+    # load end result images
+    er01 = cv2.imread('assets/endresults/er01.jpg', 1)
+    er02 = cv2.imread('assets/endresults/er02.jpg', 1)
+    er03 = cv2.imread('assets/endresults/er03.jpg', 1)
+    er04 = cv2.imread('assets/endresults/er04.jpg', 1)
+    er05 = cv2.imread('assets/endresults/er05.jpg', 1)
+    endresults = [er01, er02, er03, er04, er05]
+    endresult = endresults[3]
+
     # -------------------- main loop ------------------------
 
     while True:
@@ -71,7 +80,7 @@ def main():
                 elif curStep.checkShape(img, img_masked, accent_masked):
                     print('moving to the next step')
 
-                    if num == len(steps)-2:   # last step, proceed to end screen
+                    if num == 3:   # last step, proceed to end screen
                         print("Well done!")
                         state = 1
 
@@ -79,6 +88,7 @@ def main():
                         num += 1
                         prevStep = steps[num]
                         curStep = steps[num+1]
+                        endresult = endresults[num]
 
                 # elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
                 #     draw.putInstruction(img, 'Wrong shape')
@@ -89,6 +99,7 @@ def main():
                 curStep.showNextStep(img, img_masked, accent_masked)
 
         cv2.imshow('AR Instructor', img)
+        cv2.imshow('Reference image', endresult)
 
         keyPressed = cv2.waitKey(10)
         if (keyPressed & 0xFF) == ord('q'):

@@ -32,8 +32,8 @@ def startWebcam():
         cap = cv2.VideoCapture(0)
         # cap = cv2.VideoCapture('videos/step3_sample.mov')
 
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     cap.set(cv2.CAP_PROP_EXPOSURE, -7)  # set exposure to minimum
 
     # retrieve saved values
@@ -67,6 +67,8 @@ def startWebcam():
         success, img = cap.read()
         imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(imgHSV, l_hsv, u_hsv)
+        mask2 = cv2.inRange(imgHSV, l1, u1)
+        mask3 = cv2.inRange(imgHSV, l2, u2)
 
         # ==== key controls ====
         keyPressed = cv2.waitKey(1)
@@ -199,8 +201,11 @@ def startWebcam():
                 img_copy, img_masked, accent_masked, False)
             print(step)
 
-        cv2.namedWindow('Result')
-        cv2.imshow("Result", img_copy)
+        # cv2.namedWindow('Result')
+        cv2.imshow("Webcam", img_copy)
+        cv2.imshow("Paper", mask)
+        cv2.imshow("Colour accent", mask2)
+        cv2.imshow("Skin", mask3)
 
 
 state = 0
