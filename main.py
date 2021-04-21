@@ -15,7 +15,6 @@ def main():
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
         cap = cv2.VideoCapture(0, 1200)
-        # cap = cv2.VideoCapture('videos/full_sample.mov')
 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -47,7 +46,6 @@ def main():
     er04 = cv2.imread('assets/endresults/er04.jpg', 1)
     er05 = cv2.imread('assets/endresults/er05.jpg', 1)
     endresults = [er01, er02, er03, er04, er05]
-    endresult = endresults[3]
 
     # -------------------- main loop ------------------------
 

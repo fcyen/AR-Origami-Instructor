@@ -20,7 +20,7 @@ TEXT_POS = (100, 100)
 
 """
 Press 'q' to quit
-      'w' to toggle HSV trackbars
+      'x/y/z' to toggle HSV trackbars
       'e' to toggle Canny threshold trackbars
 """
 
@@ -121,21 +121,7 @@ def startWebcam():
             else:
                 print('Close other trackbar first')
 
-        # HSV trackbar (white)
-        elif (keyPressed & 0xFF) == ord('z'):
-            # turn on trackbar
-            if not any(trackbarOn):
-                l_hsv = l2
-                u_hsv = u2
-                tb2.startTrackbars()
-                trackbarOn[HSV_B] = True
-            elif trackbarOn[HSV_B]:
-                values = tb.closeTrackbars()
-                trackbarOn[HSV_B] = False
-            else:
-                print('Close other trackbar first')
-
-        # HSV trackbar (yellow)
+        # HSV trackbar (A)
         elif (keyPressed & 0xFF) == ord('y'):
             # turn on trackbar
             if not any(trackbarOn):
@@ -146,6 +132,20 @@ def startWebcam():
             elif trackbarOn[HSV_A]:
                 values = tb.closeTrackbars()
                 trackbarOn[HSV_A] = False
+            else:
+                print('Close other trackbar first')
+
+        # HSV trackbar (B)
+        elif (keyPressed & 0xFF) == ord('z'):
+            # turn on trackbar
+            if not any(trackbarOn):
+                l_hsv = l2
+                u_hsv = u2
+                tb2.startTrackbars()
+                trackbarOn[HSV_B] = True
+            elif trackbarOn[HSV_B]:
+                values = tb.closeTrackbars()
+                trackbarOn[HSV_B] = False
             else:
                 print('Close other trackbar first')
 
@@ -173,28 +173,7 @@ def startWebcam():
 
         img_copy = np.copy(img)
 
-        if state == 0:  # Step 1
-            sq1 = []
-            try:
-                sq1, sq2, sq3, sq4 = shape.findSquare(mask, img_copy)
-                if len(sq1) > 0:  # if square is found
-                    cv2.line(img_copy, tuple(sq1), tuple(sq3), styles.GREEN, 2)
-                    draw.drawCurvedArrow(
-                        img_copy, sq2, sq3, sq4, sq1, styles.GREEN)
-                    instruction1 = "Fold the paper in half along the green line"
-                    cv2.putText(img_copy, instruction1, TEXT_POS,
-                                cv2.FONT_HERSHEY_PLAIN, 1)
-                    time.sleep(2)
-                    state += 1
-            except:
-                pass
-        # check Step 1 completion
-        elif state == 1:
-            print('2')
-            time.sleep(5)
-            break
-
-        elif state == 2:    # misc testing
+        if state == 2:    # misc testing
             img_masked = cv2.inRange(imgHSV, lowerHSV, upperHSV)
             accent_masked = cv2.inRange(imgHSV, l2, u2)
             step, shape = identifyCurrentStep(
@@ -210,6 +189,3 @@ def startWebcam():
 
 state = 0
 startWebcam()
-
-
-#shape.detectLines(img, canny["Threshold1"][0], canny["Threshold2"][0], img2)

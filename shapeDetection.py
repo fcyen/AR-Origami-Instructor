@@ -33,8 +33,9 @@ def detectShape(mask, dimg=[], minArea=1000, debug=False):
     kernel = np.ones((5, 5), np.uint8)
     cv2.erode(mask, kernel)
 
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    contours, _ = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     max_area = 0
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -63,7 +64,8 @@ def detectContours(mask, dimg=[]):
     kernel = np.ones((5, 5), np.uint8)
     cv2.erode(mask, kernel)
 
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     return contours, hierarchy
 
@@ -221,15 +223,16 @@ def identifyTriangle(mask, step_num, dimg=[], debug=False):
 
     if max_i > 0:
         max_cnt_full = contours[max_i]
-        max_cnt = cv2.approxPolyDP(max_cnt_full, 0.02*cv2.arcLength(max_cnt_full, True), True)
-
+        max_cnt = cv2.approxPolyDP(
+            max_cnt_full, 0.02*cv2.arcLength(max_cnt_full, True), True)
 
         if len(max_cnt) == 5:   # paper is slightly open
             if step_num == 1:
                 return []
             elif step_num == 0:
                 hull = cv2.convexHull(max_cnt, returnPoints=False)
-                defects = cv2.convexityDefects(max_cnt, hull)   # [ start point, end point, farthest point, approximate distance to farthest point ]
+                # [ start point, end point, farthest point, approximate distance to farthest point ]
+                defects = cv2.convexityDefects(max_cnt, hull)
 
                 if defects is not None and len(defects) == 1 and defects[0][0][3] < 100:
                     # correct shape
@@ -251,7 +254,6 @@ def identifyTriangle(mask, step_num, dimg=[], debug=False):
                     else:       # bd are bases
                         shape = np.array([c, b, d])
 
-
         elif len(max_cnt) == 3:
             # check if there are two child contours
             # hierarchy = [next, previous, first child, parent]
@@ -270,8 +272,7 @@ def identifyTriangle(mask, step_num, dimg=[], debug=False):
                 if area > 300 and area < 700:
                     marker_count += 1
                     # cv2.drawContours(dimg, [cnt], 0, (0,0,255))
-            # print(marker_count)
-            
+
             # child_index = hierarchy[0][max_i][2]
             # if child_index > 0:
             #     # >> use if necessary
@@ -279,19 +280,13 @@ def identifyTriangle(mask, step_num, dimg=[], debug=False):
             #     while child_index > 0:
             #         child_cnt = contours[child_index]
             #         child_area = cv2.contourArea(child_cnt)
-            #         if child_area > 200 and child_area < 500: 
+            #         if child_area > 200 and child_area < 500:
             #             num_of_children += 1
             #             cv2.drawContours(dimg, [child_cnt], 0, (0,0,150))
             #             cv2.putText(dimg, str(child_area), (child_cnt[0][0][0], child_cnt[0][0][1]), cv2.FONT_HERSHEY_COMPLEX, 2, (0,0,150))
 
             #         child_index = hierarchy[0][child_index][0] # fetch next child
-            
-            #     if num_of_children == 2 and step_num ==2:
-            #         return []
 
-                # if step_num == 2:
-                #     return []
-                    
             a, b, c = max_cnt
             l1 = calculatedSquaredDistance(a[0], b[0])
             l2 = calculatedSquaredDistance(b[0], c[0])
@@ -325,7 +320,7 @@ def differentiateTriangle(mask, step_num, dimg, debug=False):
             hsv = raw[str(3)]
             lowerHSV = np.array(hsv["LowerHSV"])
             upperHSV = np.array(hsv["UpperHSV"])
-        
+
         img_hsv = cv2.cvtColor(dimg, cv2.COLOR_BGR2HSV)
         img_marker = cv2.inRange(img_hsv, lowerHSV, upperHSV)
         markers, _ = detectContours(img_marker, dimg)
@@ -334,34 +329,14 @@ def differentiateTriangle(mask, step_num, dimg, debug=False):
             area = cv2.contourArea(m)
             if area > 200 and area < 900:
                 marker_count += 1
-        
+
         if marker_count < 2 and step_num == 2:
             return True
         elif marker_count == 2 and step_num == 3:
             return True
-    
+
     return False
-        
 
 
 def calculatedSquaredDistance(pt1, pt2):
     return (pt1[0]-pt2[0]) ** 2 + (pt1[1]-pt2[1]) ** 2
-
-
-# img = cv2.imread('paper-on-desk.jpg')
-# imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-# lower_hsv = np.array([0,0,0])
-# upper_hsv = np.array([179,42,255])
-# mask = cv2.inRange(imgHSV, lower_hsv, upper_hsv)
-
-# detectShape(img, mask, img)
-# plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.show()
-
-# while True:
-#     keyPressed = cv2.waitKey(1)
-#     # quit
-#     if (keyPressed & 0xFF) == ord('q'):
-#         cv2.destroyAllWindows()
-#         break
-#     cv2.imshow("Img", img)
-#     detectShape2(img, 20, 80)

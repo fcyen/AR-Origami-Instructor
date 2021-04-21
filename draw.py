@@ -184,17 +184,3 @@ def equationroots(a, b, c):
 # cx = int((pt_a[0]+pt_c[0])/2)
 # cy = int((pt_a[1]+pt_c[1])/2)
 # center = (cx, cy)
-
-# pt_a = shapeComparison.rotate(pt_a, center, 30)
-# pt_b = shapeComparison.rotate(pt_b, center, 30)
-# pt_c = shapeComparison.rotate(pt_c, center, 30)
-# x = pt_a[0] + pt_c[0] - pt_b[0]
-# y = pt_a[1] + pt_c[1] - pt_b[1]
-
-# cv2.circle(img, pt_a, 5, RED, -1)
-# cv2.circle(img, pt_b, 5, RED, -1)
-# cv2.circle(img, pt_c, 5, RED, -1)
-# cv2.circle(img, (x, y), 5, RED)
-# drawCurvedArrow(img, pt_a, pt_b, pt_c, pt_d)
-# cv2.imshow('Image', img)
-# cv2.waitKey(0)
