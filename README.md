@@ -2,7 +2,11 @@
 
 This AR Instructor teaches you origami step-by-step.
 
-### Installation
+![smallergif](https://user-images.githubusercontent.com/44438602/115509801-758cb980-a2b1-11eb-9103-83cc3a4d5861.gif)
+
+
+
+## Installation
 
 1. Download this project and `cd` to it
 
@@ -14,10 +18,12 @@ This AR Instructor teaches you origami step-by-step.
    pip install -r requirements.txt
    ```
 
-4. Run main.py \*note: You might want to calibrate the HSV values to improve detection accuracy
+4. Run main.py  
+   \*note: You might want to calibrate the HSV values to improve detection accuracy
    ```
    python main.py
    ```
+
 
 #### HSV Calibration
 
@@ -27,14 +33,15 @@ This AR Instructor teaches you origami step-by-step.
    python hsvCalibration.py
    ```
 
-2. To toggle HSV trackbars:
-   'x': Paper silhouette
-   'y': Skin colour
-   'z': Coloured side of paper
+2. To toggle HSV trackbars:  
+      *'x'*: Paper silhouette  
+      *'y'*: Skin colour  
+      *'z'*: Coloured side of paper
 
-3. To quit and save a particular HSV range:
-   's': Paper silhouette
-   't': Skin colour
-   'u': Coloured side of paper
+3. To quit and save a particular HSV range:  
+      *'s'*: Paper silhouette  
+      *'t'*: Skin colour  
+      *'u'*: Coloured side of paper
 
-   To quit without saving: 'q'
+
+   To quit without saving: *'q'*
