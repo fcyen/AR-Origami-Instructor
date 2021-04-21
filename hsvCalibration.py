@@ -8,8 +8,8 @@ import shapeDetection as shape
 import draw
 import time
 from sys import platform
-from shapeDetection import detectShape, findTriangleWithFold, calculatedSquaredDistance
-from archive.shapeComparison import detectContour
+from shapeDetection import detectShape, findTriangle, findTriangleWithFold, calculatedSquaredDistance, identifyTriangle, differentiateTriangle
+from shapeMatch import identifyCurrentStep, detectContours
 
 
 HSV = 0
@@ -20,7 +20,7 @@ TEXT_POS = (100, 100)
 
 """
 Press 'q' to quit
-      'w' to toggle HSV trackbars
+      'x/y/z' to toggle HSV trackbars
       'e' to toggle Canny threshold trackbars
 """
 
@@ -29,10 +29,11 @@ def startWebcam():
     if platform == 'win32':
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
-        cap = cv2.VideoCapture(0)  # open the default camera
+        cap = cv2.VideoCapture(0)
+        # cap = cv2.VideoCapture('videos/step3_sample.mov')
 
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     cap.set(cv2.CAP_PROP_EXPOSURE, -7)  # set exposure to minimum
 
     # retrieve saved values
@@ -66,6 +67,8 @@ def startWebcam():
         success, img = cap.read()
         imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(imgHSV, l_hsv, u_hsv)
+        mask2 = cv2.inRange(imgHSV, l1, u1)
+        mask3 = cv2.inRange(imgHSV, l2, u2)
 
         # ==== key controls ====
         keyPressed = cv2.waitKey(1)
@@ -118,21 +121,7 @@ def startWebcam():
             else:
                 print('Close other trackbar first')
 
-        # HSV trackbar (white)
-        elif (keyPressed & 0xFF) == ord('z'):
-            # turn on trackbar
-            if not any(trackbarOn):
-                l_hsv = l2
-                u_hsv = u2
-                tb2.startTrackbars()
-                trackbarOn[HSV_B] = True
-            elif trackbarOn[HSV_B]:
-                values = tb.closeTrackbars()
-                trackbarOn[HSV_B] = False
-            else:
-                print('Close other trackbar first')
-
-        # HSV trackbar (yellow)
+        # HSV trackbar (A)
         elif (keyPressed & 0xFF) == ord('y'):
             # turn on trackbar
             if not any(trackbarOn):
@@ -143,6 +132,20 @@ def startWebcam():
             elif trackbarOn[HSV_A]:
                 values = tb.closeTrackbars()
                 trackbarOn[HSV_A] = False
+            else:
+                print('Close other trackbar first')
+
+        # HSV trackbar (B)
+        elif (keyPressed & 0xFF) == ord('z'):
+            # turn on trackbar
+            if not any(trackbarOn):
+                l_hsv = l2
+                u_hsv = u2
+                tb2.startTrackbars()
+                trackbarOn[HSV_B] = True
+            elif trackbarOn[HSV_B]:
+                values = tb.closeTrackbars()
+                trackbarOn[HSV_B] = False
             else:
                 print('Close other trackbar first')
 
@@ -170,36 +173,19 @@ def startWebcam():
 
         img_copy = np.copy(img)
 
-        if state == 0:  # Step 1
-            sq1 = []
-            try:
-                sq1, sq2, sq3, sq4 = shape.findSquare(mask, img_copy)
-                if len(sq1) > 0:  # if square is found
-                    cv2.line(img_copy, tuple(sq1), tuple(sq3), styles.GREEN, 2)
-                    draw.drawCurvedArrow(
-                        img_copy, sq2, sq3, sq4, sq1, styles.GREEN)
-                    instruction1 = "Fold the paper in half along the green line"
-                    cv2.putText(img_copy, instruction1, TEXT_POS,
-                                cv2.FONT_HERSHEY_PLAIN, 1)
-                    time.sleep(2)
-                    state += 1
-            except:
-                pass
-        # check Step 1 completion
-        elif state == 1:
-            print('2')
-            time.sleep(5)
-            break
+        if state == 2:    # misc testing
+            img_masked = cv2.inRange(imgHSV, lowerHSV, upperHSV)
+            accent_masked = cv2.inRange(imgHSV, l2, u2)
+            step, shape = identifyCurrentStep(
+                img_copy, img_masked, accent_masked, False)
+            print(step)
 
-        elif state == 2:    # misc testing
-            detectContour(mask, img_copy)
-
-        cv2.namedWindow('Result')
-        cv2.imshow("Result", img_copy)
+        # cv2.namedWindow('Result')
+        cv2.imshow("Webcam", img_copy)
+        cv2.imshow("Paper", mask)
+        cv2.imshow("Colour accent", mask2)
+        cv2.imshow("Skin", mask3)
 
 
 state = 0
 startWebcam()
-
-
-#shape.detectLines(img, canny["Threshold1"][0], canny["Threshold2"][0], img2)

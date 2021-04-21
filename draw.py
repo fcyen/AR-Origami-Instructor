@@ -25,13 +25,13 @@ pt_d = (412, 100)
 # ====== drawing functions below ======
 
 def drawCurvedArrow(dimg, p1, p2, p3, p4, color=LIGHTBLUE, thickness=THICKNESS_S):
-    # move points inwards by 20%
-    p1x = round(0.8*p1[0] + 0.2*p3[0])
-    p1y = round(0.8*p1[1] + 0.2*p3[1])
-    p2x = round(0.8*p2[0] + 0.2*p4[0])
-    p2y = round(0.8*p2[1] + 0.2*p4[1])
-    p3x = round(0.8*p3[0] + 0.2*p1[0])
-    p3y = round(0.8*p3[1] + 0.2*p1[1])
+    # move points inwards by 10%
+    p1x = round(0.9*p1[0] + 0.1*p3[0])
+    p1y = round(0.9*p1[1] + 0.1*p3[1])
+    p2x = round(0.9*p2[0] + 0.1*p4[0])
+    p2y = round(0.9*p2[1] + 0.1*p4[1])
+    p3x = round(0.9*p3[0] + 0.1*p1[0])
+    p3y = round(0.9*p3[1] + 0.1*p1[1])
     new_p1 = (p1x, p1y)
     new_p2 = (p2x, p2y)
     new_p3 = (p3x, p3y)
@@ -49,6 +49,30 @@ def drawCurvedArrow(dimg, p1, p2, p3, p4, color=LIGHTBLUE, thickness=THICKNESS_S
 
     cv2.polylines(dimg, np.array(
         [curve_points], dtype=np.int32), False, color, thickness=thickness)
+
+    # arrow tip
+    drawTriangle(dimg, curve_points[-1], curve_points[-5], color, thickness)
+
+
+def drawCurvedArrowWithCircle(dimg, p1, p2, p3, p4, color=LIGHTBLUE, thickness=THICKNESS_S):
+    new_p1 = (p1, p1)
+    new_p2 = (p2, p2)
+    new_p3 = (p3, p3)
+
+    curve_points = []
+
+    for t in range(100):
+        i = t/100
+        # formula referenced from: https://youtu.be/pnYccz1Ha34?t=167
+        qx = round(((1-i)**2 * new_p1[0] + 2*(1-i)
+                    * i*new_p2[0] + i**2 * new_p3[0]))
+        qy = round(((1-i)**2 * new_p1[1] + 2*(1-i)
+                    * i*new_p2[1] + i**2 * new_p3[1]))
+        curve_points.append((qx, qy))
+
+    cv2.polylines(dimg, np.array(
+        [curve_points], dtype=np.int32), False, color, thickness=thickness)
+    cv2.circle(dimg, new_p1, 5, color, 3)   # starting point
 
     # arrow tip
     drawTriangle(dimg, curve_points[-1], curve_points[-5], color, thickness)
@@ -94,7 +118,6 @@ def drawWave(dimg, pt_a, pt_b, time, color=LIGHTBLUE, thickness=THICKNESS_S):
     mid = ((xa+xb)/2, (ya+yb)/2)
     angle_rad = math.atan(abs(ya-yb)/abs(xa-xb))
     angle = math.degrees(angle_rad)
-    print(angle)
 
     for x in range(640):
         y = amp*math.sin(rad)
@@ -161,17 +184,3 @@ def equationroots(a, b, c):
 # cx = int((pt_a[0]+pt_c[0])/2)
 # cy = int((pt_a[1]+pt_c[1])/2)
 # center = (cx, cy)
-
-# pt_a = shapeComparison.rotate(pt_a, center, 30)
-# pt_b = shapeComparison.rotate(pt_b, center, 30)
-# pt_c = shapeComparison.rotate(pt_c, center, 30)
-# x = pt_a[0] + pt_c[0] - pt_b[0]
-# y = pt_a[1] + pt_c[1] - pt_b[1]
-
-# cv2.circle(img, pt_a, 5, RED, -1)
-# cv2.circle(img, pt_b, 5, RED, -1)
-# cv2.circle(img, pt_c, 5, RED, -1)
-# cv2.circle(img, (x, y), 5, RED)
-# drawCurvedArrow(img, pt_a, pt_b, pt_c, pt_d)
-# cv2.imshow('Image', img)
-# cv2.waitKey(0)

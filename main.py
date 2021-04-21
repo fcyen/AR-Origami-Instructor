@@ -5,8 +5,9 @@ import numpy as np
 from sys import platform
 import time
 
-from allSteps import steps, DEBUG
+from steps import steps, DEBUG
 import draw
+from shapeMatch import identifyCurrentStep
 
 
 def main():
@@ -14,7 +15,6 @@ def main():
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
         cap = cv2.VideoCapture(0, 1200)
-    # cap = cv2.VideoCapture('videos/full_sample.mov')  # use sample video
 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -22,13 +22,9 @@ def main():
 
     state = 0
     num = 0
-    curStep = steps[num]
-    nextStep = steps[num+1]
+    prevStep = steps[num]
+    curStep = steps[num+1]
     count = 0
-
-    def dummyFn(a, b):  # for the first step
-        return False
-    curStep.showNextStep = dummyFn
 
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
@@ -36,9 +32,21 @@ def main():
         hsv = raw[str(0)]
         lowerHSV = np.array(hsv["LowerHSV"])
         upperHSV = np.array(hsv["UpperHSV"])
-        hsv_skin = raw[str(2)]  # green colour
+        hsv_skin = raw[str(2)]   # skin colour
         lowerHSV_skin = np.array(hsv_skin["LowerHSV"])
         upperHSV_skin = np.array(hsv_skin["UpperHSV"])
+        hsv_accent = raw[str(3)]  # green colour
+        lowerHSV_accent = np.array(hsv_accent["LowerHSV"])
+        upperHSV_accent = np.array(hsv_accent["UpperHSV"])
+
+    # load end result images
+    er01 = cv2.imread('assets/endresults/er01.jpg', 1)
+    er02 = cv2.imread('assets/endresults/er02.jpg', 1)
+    er03 = cv2.imread('assets/endresults/er03.jpg', 1)
+    er04 = cv2.imread('assets/endresults/er04.jpg', 1)
+    er05 = cv2.imread('assets/endresults/er05.jpg', 1)
+    endresults = [er01, er02, er03, er04, er05]
+    endresult = endresults[0]
 
     # -------------------- main loop ------------------------
 
@@ -46,80 +54,85 @@ def main():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
-        img_skin = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
+        skin_masked = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
+        accent_masked = cv2.inRange(img_hsv, lowerHSV_accent, upperHSV_accent)
 
-        if state == 0:
-            if num == 0:
-                text1 = 'Place paper on the table'
-                text2 = '(white colour side facing up)'
-                draw.putInstruction(img, text1)
-                draw.putInstruction(img, text2, position=(60, 90))
+        if detectHands(img_hsv, lowerHSV_skin, upperHSV_skin):
+            # text = 'Hands detected!'
+            text = ''
+            draw.putInstruction(img, text)
 
-            if curStep.showNextStep(img, img_masked):  # return True if shape matches
-                print('cur')
-                if num == 3 or num == 2:
-                    count += 1
+        else:
+            if state == 0:
+                if num == 0:
+                    text1 = 'Place paper on the table to start'
+                    text2 = '(white colour side facing up)'
+                    draw.putInstruction(img, text1)
+                    draw.putInstruction(img, text2, position=(60, 90))
 
-            # return True if shape if confirmed to be correct
-            elif nextStep.checkShape(img, img_masked):
-                print('next')
-                if num == len(steps)-2:   # last step
-                    print("Well done!")
-                    state = 1
-                    nextStep.showNextStep(img, img_masked)
-                    # time.sleep(2)
-                    # cap.release()
-                    # cv2.destroyAllWindows()
-                    # break
+                # return True if shape matches
+                if prevStep.showNextStep(img, img_masked, accent_masked):
+                    if DEBUG:
+                        print('showing instructions for step {}'.format(prevStep.id))
 
-                else:
-                    num += 1
-                    count = 0
-                    curStep = steps[num]
-                    nextStep = steps[num+1]
+                # return True if shape if confirmed to be correct
+                elif curStep.checkShape(img, img_masked, accent_masked):
+                    print('moving to the next step')
 
-        #     if step.checkShape(img_masked, img):
-        #         num += 1
+                    if num == 3:   # last step, proceed to end screen
+                        print("Well done!")
+                        state = 1
 
-        #         else:
-        #             curStep = steps[num]
-        #             nextStep = steps[num+1]
-        #         state = 1
+                    else:
+                        num += 1
+                        prevStep = steps[num]
+                        curStep = steps[num+1]
+                        endresult = endresults[num]
 
-        elif state == 1:
-            nextStep.showNextStep(img, img_masked)
-        #     hand_detected = img_skin.sum() > 10000000
-        #     if step.showNextStep(img, img_masked) or hand_detected:
-        #         state = 0
-        #         if num == len(steps):
-        #             print("Well done!")
-        #             step.showNextStep(img, img_masked)
-        #             time.sleep(2)
-        #             cap.release()
-        #             cv2.destroyAllWindows()
-        #             break
-        #         else:
-        #             step = steps[num]
+                # elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
+                #     draw.putInstruction(img, 'Wrong shape')
+                #     draw.putInstruction(img, 'Please try again', position=(60, 90))
 
-        print("State: {}, step {}".format(state, curStep.id))
+            # end screen, shows the wave animation
+            elif state == 1:
+                curStep.showNextStep(img, img_masked, accent_masked)
 
-        cv2.imshow('Webcam', img)
+        cv2.imshow('AR Instructor', img)
+        cv2.imshow('Reference image', endresult)
 
-        keyPressed = cv2.waitKey(1)
+        keyPressed = cv2.waitKey(10)
         if (keyPressed & 0xFF) == ord('q'):
             cap.release()
             cv2.destroyAllWindows()
             break
 
         # force proceed to next step
-        elif (keyPressed & 0xFF) == ord('n') or (count > 300):
-            if num < (len(steps)-2):
+        elif (keyPressed & 0xFF) == ord('n'):
+            if num < 3:
                 num += 1
-                curStep = steps[num]
-                nextStep = steps[num+1]
-            elif num == (len(steps)-2):
-                num
-                curStep = steps[0]
+                prevStep = steps[num]
+                curStep = steps[num+1]
+
+            # stop checking previous step
+            elif num == 3:
+                prevStep = steps[0]
+
+        # force retreat to previous step
+        elif (keyPressed & 0xFF) == ord('p'):
+            if num > 0:
+                num -= 1
+                prevStep = steps[num]
+                curStep = steps[num+1]
+
+
+def detectHands(img_hsv, l_hsv, u_hsv):
+    mask = cv2.inRange(img_hsv, l_hsv, u_hsv)
+    h, w = mask.shape
+    cropped = mask[h-50:h, 0:w]
+    if cropped.sum() > 500000:
+        return True
+    else:
+        return False
 
 
 main()
