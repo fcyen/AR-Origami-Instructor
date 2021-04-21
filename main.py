@@ -15,6 +15,7 @@ def main():
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:
         cap = cv2.VideoCapture(0, 1200)
+        # cap = cv2.VideoCapture('videos/full_sample.mov')
 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -25,7 +26,6 @@ def main():
     prevStep = steps[num]
     curStep = steps[num+1]
     count = 0
-
 
     # retrieve saved values
     with open('trackbarValues.json') as json_file:
@@ -46,6 +46,7 @@ def main():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_masked = cv2.inRange(img_hsv, lowerHSV, upperHSV)
+        skin_masked = cv2.inRange(img_hsv, lowerHSV_skin, upperHSV_skin)
         accent_masked = cv2.inRange(img_hsv, lowerHSV_accent, upperHSV_accent)
 
         if detectHands(img_hsv, lowerHSV_skin, upperHSV_skin):
@@ -61,14 +62,16 @@ def main():
                     draw.putInstruction(img, text1)
                     draw.putInstruction(img, text2, position=(60, 90))
 
-                if prevStep.showNextStep(img, img_masked, accent_masked):  # return True if shape matches
+                # return True if shape matches
+                if prevStep.showNextStep(img, img_masked, accent_masked):
                     if DEBUG:
                         print('showing instructions for step {}'.format(prevStep.id))
 
-                elif curStep.checkShape(img, img_masked, accent_masked):   # return True if shape if confirmed to be correct
+                # return True if shape if confirmed to be correct
+                elif curStep.checkShape(img, img_masked, accent_masked):
                     print('moving to the next step')
 
-                    if num == len(steps)-2:   # last step, proceed to end screen 
+                    if num == len(steps)-2:   # last step, proceed to end screen
                         print("Well done!")
                         state = 1
 
@@ -76,18 +79,18 @@ def main():
                         num += 1
                         prevStep = steps[num]
                         curStep = steps[num+1]
-                
+
                 # elif num != 0 and identifyCurrentStep(img, img_masked, accent_masked, debug=DEBUG)[0] == -1:
                 #     draw.putInstruction(img, 'Wrong shape')
                 #     draw.putInstruction(img, 'Please try again', position=(60, 90))
 
             # end screen, shows the wave animation
-            elif state == 1: 
+            elif state == 1:
                 curStep.showNextStep(img, img_masked, accent_masked)
 
         cv2.imshow('AR Instructor', img)
 
-        keyPressed = cv2.waitKey(1)
+        keyPressed = cv2.waitKey(10)
         if (keyPressed & 0xFF) == ord('q'):
             cap.release()
             cv2.destroyAllWindows()
@@ -103,7 +106,7 @@ def main():
             # stop checking previous step
             elif num == 3:
                 prevStep = steps[0]
-        
+
         # force retreat to previous step
         elif (keyPressed & 0xFF) == ord('p'):
             if num > 0:

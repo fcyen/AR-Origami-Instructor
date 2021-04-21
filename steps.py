@@ -10,6 +10,7 @@ convertToIntPoint = draw.convertToIntPoint
 steps = []  # array of Step instances
 DEBUG = False
 
+
 class Step:
     def __init__(self, id, draw_fn, instruction, **kwargs):
         '''
@@ -25,7 +26,8 @@ class Step:
         self.match_count = 0
 
     def checkShape(self, img, img_masked, accent_masked, debug=DEBUG):
-        step, shape = identifyCurrentStep(img, img_masked, accent_masked, debug)
+        step, shape = identifyCurrentStep(
+            img, img_masked, accent_masked, debug)
         shape_match = step == self.id
 
         # return True after 10 consecutive matches
@@ -38,7 +40,6 @@ class Step:
         elif self.match_count > 0:
             self.match_count -= 2
             return False
-
 
     def showNextStep(self, dimg, img_masked, accent_masked, debug=DEBUG):
         ''' Displays instruction graphics, returns True if shape still matches '''
@@ -68,15 +69,21 @@ class Step:
             return True
 
         return False
- 
+
 
  # ~~~~~~~~~~~~~~~~~ Step 0 ~~~~~~~~~~~~~~~~~~
 step0 = Step(0, None, '')
-def dummyFn(self, x,y): 
+
+
+def dummyFn(self, x, y):
     return False
+
+
 step0.showNextStep = dummyFn
 
 # ~~~~~~~~~~~~~~~~~ Step 1 ~~~~~~~~~~~~~~~~~~~
+
+
 def draw1(img, ref_cnt):
     ref_cnt = ref_cnt.reshape(4, 2)
     pt1 = tuple(ref_cnt[0])
@@ -132,7 +139,7 @@ def draw2(img, ref_cnt):
 
 
 instruction2 = ["Fold the top layer along the",
-                 "blue line"]
+                "blue line"]
 step2 = Step(2, draw2, instruction2)
 
 

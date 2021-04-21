@@ -35,14 +35,13 @@ def detectShape(mask, dimg=[], minArea=1000, debug=False):
 
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
+    max_area = 0
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > minArea:  # remove noise
+        if area > max_area:
+            max_area = area
             approx = cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)
-            result.append(approx)
-
-            if debug and len(dimg) > 0:
-                cv2.drawContours(dimg, [approx], 0, draw.DEBUG_GREEN, 2)
+            result = approx
 
     return result
 
